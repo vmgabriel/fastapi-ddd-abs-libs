@@ -1,0 +1,23 @@
+repos:
+  - repo: local
+    hooks:
+      - id: type-check
+        name: Type check
+        entry: hatch run types:check
+        language: python
+        types: [ python ]
+
+      - id: format-code
+        name: Format code and Lint
+        entry: hatch fmt
+        language: python
+        types: [ python ]
+
+      - id: test-code
+        name: Unit Test Code Execute
+        entry: hatch test
+        language: python
+        types: [ python ]
+        verbose: true
+        always_run: true
+        pass_filenames: false
