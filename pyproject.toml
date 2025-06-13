@@ -1,0 +1,118 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "fastapi-ddd-abs-libs"
+dynamic = ["version"]
+description = 'A extension using DDD for generate fastapi integration and that you can change if you require'
+readme = "README.md"
+requires-python = ">=3.10"
+license = "MIT"
+keywords = []
+authors = [
+    { name = "Gabriel Vargas", email = "vmgabriel96@gmail.com" },
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: Implementation :: CPython",
+    "Programming Language :: Python :: Implementation :: PyPy",
+]
+dependencies = [
+    "fastapi >= 0.115.12",
+    "email-validator >= 2.2.0",
+    "httpx >= 0.28.1",
+    "jinja2 >= 3.1.6",
+    "python-multipart >= 0.0.20",
+    "uvicorn >= 0.34.3",
+]
+
+[project.urls]
+Documentation = "https://github.com/Gabriel Vargas/fastapi-ddd-abs-libs#readme"
+Issues = "https://github.com/Gabriel Vargas/fastapi-ddd-abs-libs/issues"
+Source = "https://github.com/Gabriel Vargas/fastapi-ddd-abs-libs"
+
+[tool.hatch.version]
+path = "src/fastapi_ddd_abs_libs/__about__.py"
+
+[tool.hatch.envs.default]
+type = "virtual"
+path = ".venv"
+
+[tool.hatch.envs.default.scripts]
+test = "pytest tests/*"
+
+[tool.hatch.envs.types]
+extra-dependencies = [
+    "mypy>=1.0.0",
+]
+[tool.hatch.envs.types.scripts]
+check = "mypy --install-types --non-interactive {args:src/fastapi_ddd_abs_libs tests}"
+
+[tool.hatch.envs.hatch-static-analysis]
+dependencies = ["black", "flake8", "isort"]
+
+[tool.hatch.envs.hatch-static-analysis.scripts]
+format-check = [
+    "black --check --diff {args:src/fastapi_ddd_abs_libs tests}",
+    "isort --check-only --diff {args:src/fastapi_ddd_abs_libs tests}",
+]
+format-fix = [
+    "isort {args:src/fastapi_ddd_abs_libs tests}",
+    "black {args:src/fastapi_ddd_abs_libs tests}",
+]
+lint-check = "flake8 {args:src/fastapi_ddd_abs_libs tests}"
+lint-fix = "lint-check"
+
+[tool.hatch.envs.pre-commit]
+dependencies = [
+    "pre-commit",
+    "black",
+    "flake8",
+    "mypy",
+    "isort",
+    "pytest",
+]
+
+[tool.hatch.envs.pre-commit.scripts]
+run = "pre-commit run --show-diff-on-failure"
+
+[tool.hatch.envs.dev]
+template = "dev"
+
+[tool.hatch.envs.dev.scripts]
+run = "python src/main.py"
+
+[tool.coverage.run]
+source_pkgs = ["tests"]
+branch = true
+parallel = true
+omit = [
+    "src/fastapi_ddd_abs_libs/__about__.py",
+]
+
+[tool.coverage.paths]
+fastapi_ddd_abs_libs = ["src/fastapi_ddd_abs_libs"]
+tests = ["tests", "*/fastapi-ddd-abs-libs/tests"]
+
+[tool.coverage.report]
+exclude_lines = [
+    "no cov",
+    "if __name__ == .__main__.:",
+    "if TYPE_CHECKING:",
+]
+
+[tool.pytest.ini_options]
+testpaths = [
+    "tests",
+]
+python_files = "test_*.py"
+python_functions = "test_*"
+addopts = "-vv"
+norecursedirs = "dist, .git, __pycache__"

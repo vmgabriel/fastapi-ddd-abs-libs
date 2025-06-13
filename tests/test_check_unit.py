@@ -1,8 +1,12 @@
-def my_sum(a: int, b: int) -> int:
-    return a + b
+from src import main
+from src.fastapi_ddd_abs_libs import __about__
 
 
 def test_check_unit_tests():
     expected = 3
 
-    assert my_sum(1, 2) == expected
+    assert main.context(1, 2) == expected
+
+
+def test_has_about_version():
+    assert bool(__about__.__version__)
