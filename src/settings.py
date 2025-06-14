@@ -1,4 +1,5 @@
 import enum
+from typing import Any, Dict
 
 # Types
 
@@ -22,6 +23,10 @@ class BaseSettings:
     # it depends on adapters that you have, this applies la configuration of that logger
     logger_provider: str
     env_provider: str
+
+    def inject(self, data: Dict[str, Any]):
+        for key, value in data.items():
+            setattr(self, key, value)
 
 
 # Hierarchies
