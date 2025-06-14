@@ -67,7 +67,7 @@ format-fix = [
     "isort {args:src/fastapi_ddd_abs_libs tests}",
     "black {args:src/fastapi_ddd_abs_libs tests}",
 ]
-lint-check = "flake8 {args:src/fastapi_ddd_abs_libs tests}"
+lint-check = "flake8 --max-line-length 90 {args:src/fastapi_ddd_abs_libs tests}"
 lint-fix = "lint-check"
 
 [tool.hatch.envs.pre-commit]
