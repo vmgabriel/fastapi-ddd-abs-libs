@@ -70,3 +70,9 @@ class InfraBase:
             if dependency_name in self.request.requirements
         }
         return infra(**required_dependencies)
+
+    def selected_with_configuration(self, dependencies: Dict[str, Any]) -> object:
+        option = getattr(self.configurations, self.title + "_provider")
+        if not option:
+            raise ValueError(f"Not Configured provider: {self.title + '_provider'}")
+        return self.select_and_inject(option, dependencies)

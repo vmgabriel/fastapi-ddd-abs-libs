@@ -12,6 +12,9 @@ class EnvironmentType(enum.StrEnum):
 
 
 class BaseSettings:
+    title: str = "DDD-Abs-Lib-Standard"
+    debug_level: str = "INFO"
+
     environment: EnvironmentType = EnvironmentType.prod
 
     # Logger Provider for message outputs system, it can configure
@@ -26,10 +29,10 @@ class BaseSettings:
 class DevSettings(BaseSettings):
     environment = EnvironmentType.dev
 
-    logger_provider = "logger"
+    logger_provider = "logging"
 
 
 class ProdSettings(BaseSettings):
     environment = EnvironmentType.prod
 
-    logger_provider = "logger"
+    logger_provider = "logging"
