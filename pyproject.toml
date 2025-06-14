@@ -7,7 +7,7 @@ name = "fastapi-ddd-abs-libs"
 dynamic = ["version"]
 description = 'A extension using DDD for generate fastapi integration and that you can change if you require'
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 license = "MIT"
 keywords = []
 authors = [
