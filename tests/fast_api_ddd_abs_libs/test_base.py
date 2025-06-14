@@ -1,4 +1,5 @@
 from logging import getLogger
+from typing import cast
 
 import pytest
 
@@ -48,8 +49,11 @@ def test_has_concrete_data_infra() -> None:
 
     assert infra_1.all() == [Children]
 
-    children_instance: Father = infra_1.select_and_inject(
-        option=expected_infra1_option1_title, dependencies=dependencies
+    children_instance: Father = cast(
+        Father,
+        infra_1.select_and_inject(
+            option=expected_infra1_option1_title, dependencies=dependencies
+        ),
     )
     assert isinstance(children_instance, Children), "Check if get type in select"
     with pytest.raises(TypeError):
