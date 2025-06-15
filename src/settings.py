@@ -14,15 +14,33 @@ class EnvironmentType(enum.StrEnum):
 
 class BaseSettings:
     title: str = "DDD-Abs-Lib-Standard"
+    summary: str = (
+        "A App for generate with DDD and abstract libraries configuration for extend all"
+    )
+    contact_info: Dict[str, str] = {
+        "name": "Gabriel Vargas Monroy",
+        "url": "https://vmgabriel.com",
+        "email": "vmgabriel96@gmail.com",
+    }
+
     debug_level: str = "INFO"
 
     environment: EnvironmentType = EnvironmentType.prod
+
+    # Documentation URL for api if this is required
+    docs_url: str = "/docs"
+    prefix_api_url: str = "/api"
 
     # Logger Provider for message outputs system, it can configure
     # using different types of provider,
     # it depends on adapters that you have, this applies la configuration of that logger
     logger_provider: str
     env_provider: str
+    http_provider: str
+
+    @property
+    def has_debug(self) -> bool:
+        return self.debug_level != "NONE"
 
     def inject(self, data: Dict[str, Any]):
         for key, value in data.items():
@@ -37,6 +55,7 @@ class DevSettings(BaseSettings):
 
     logger_provider = "logging"
     env_provider = "dotenv-python"
+    http_provider = "fastapi"
 
 
 class ProdSettings(BaseSettings):
@@ -44,3 +63,4 @@ class ProdSettings(BaseSettings):
 
     logger_provider = "logging"
     env_provider = "dotenv-python"
+    http_provider = "fastapi"

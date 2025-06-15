@@ -89,7 +89,7 @@ run = "pre-commit run --show-diff-on-failure"
 template = "dev"
 
 [tool.hatch.envs.dev.scripts]
-run = "python src/main.py"
+run = "python run.py"
 
 [tool.coverage.run]
 source_pkgs = ["tests"]

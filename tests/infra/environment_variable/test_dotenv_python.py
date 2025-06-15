@@ -1,6 +1,5 @@
 import unittest.mock as mock
 from logging import getLogger
-from typing import cast
 
 from src import settings
 from src.fastapi_ddd_abs_libs import base as base_infra
@@ -19,15 +18,14 @@ def test_get_environment_ok(
 
     configuration = settings.DevSettings()
 
-    env_adapter = base_infra.InfraBase(
+    env_adapter: base_infra.InfraBase = base_infra.InfraBase(
         request=env_request,
         logger_adapter=logger,
         configurations=configuration,
     )
 
-    environment = cast(
-        env_model.EnvironmentVariableAdapter,
-        env_adapter.selected_with_configuration({"configuration": configuration}),
+    environment: env_model.EnvironmentVariableAdapter = (
+        env_adapter.selected_with_configuration({"configuration": configuration})
     )
 
     assert environment.all() == {k.lower(): v for k, v in expected_data.items()}

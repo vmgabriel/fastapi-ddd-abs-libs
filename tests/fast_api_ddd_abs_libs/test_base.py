@@ -1,5 +1,5 @@
 from logging import getLogger
-from typing import cast
+from typing import Type, cast
 
 import pytest
 
@@ -23,16 +23,16 @@ def test_has_concrete_data_infra() -> None:
     expected_infra1_option1_title = "infra1_option1"
 
     infra_options1 = [
-        base.InfraOption(
+        base.InfraOption[Type[Father]](
             title=expected_infra1_option1_title, priority=1, type_adapter=Children
         )
     ]
-    request_infra1 = base.InfraRequest(
+    request_infra1 = base.InfraRequest[Father](
         title=expected_infra1_title,
         requirements=["infra2"],
         options=infra_options1,
     )
-    infra_1 = base.InfraBase(
+    infra_1 = base.InfraBase[Father](
         request=request_infra1,
         logger_adapter=logger,
         configurations=settings.DevSettings(),

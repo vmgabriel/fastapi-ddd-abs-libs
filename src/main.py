@@ -1,43 +1,65 @@
 from logging import getLogger
-from typing import Dict, cast
+from typing import Any, Dict
 
 from src import settings
 from src.fastapi_ddd_abs_libs import base as base_infra
-from src.infra.environment_variable import model as model_env
 from src.infra.environment_variable import request as request_environment_variable
+from src.infra.http import model as model_http
+from src.infra.http import request as request_http
 from src.infra.log import request as request_logger
 
 log = getLogger(__name__)
 
 
-_CONFIGURATION = settings.DevSettings()
+def build() -> model_http.AppHttp:
+    dependencies: Dict[str, Any] = {}
+    configuration = build_configuration()
+
+    dependencies["configuration"] = configuration
+
+    logger_builder = build_logger_adapter(configuration)
+    env_builder = build_env_adapter(configuration)
+
+    env_adapter = env_builder.selected_with_configuration(dependencies=dependencies)
+    configuration.inject(env_adapter.all())
+
+    dependencies["logger"] = logger_builder.selected_with_configuration(
+        dependencies=dependencies
+    )
+    dependencies["env"] = env_adapter
+    dependencies["http"] = build_http_adapter(
+        configuration
+    ).selected_with_configuration(dependencies=dependencies)
+
+    return dependencies["http"].execute()
 
 
-LOGGER_ADAPTER = base_infra.InfraBase(
-    request=request_logger,
-    logger_adapter=log,
-    configurations=_CONFIGURATION,
-)
+def build_configuration() -> settings.BaseSettings:
+    return settings.DevSettings()
 
-ENV_ADAPTER = base_infra.InfraBase(
-    request=request_environment_variable,
-    logger_adapter=log,
-    configurations=_CONFIGURATION,
-)
 
-dependencies: Dict[str, object] = {
-    "configuration": _CONFIGURATION,
-}
+def build_logger_adapter(configuration: settings.BaseSettings) -> base_infra.InfraBase:
+    return base_infra.InfraBase(
+        request=request_logger,
+        logger_adapter=log,
+        configurations=configuration,
+    )
 
-env_dependency = cast(
-    model_env.EnvironmentVariableAdapter,
-    ENV_ADAPTER.selected_with_configuration(dependencies=dependencies),
-)
-_CONFIGURATION.inject(env_dependency.all())
 
-dependencies.update(
-    {
-        "logger": LOGGER_ADAPTER.selected_with_configuration(dependencies=dependencies),
-        "env": env_dependency,
-    }
-)
+def build_env_adapter(configuration: settings.BaseSettings) -> base_infra.InfraBase:
+    return base_infra.InfraBase(
+        request=request_environment_variable,
+        logger_adapter=log,
+        configurations=configuration,
+    )
+
+
+def build_http_adapter(configuration: settings.BaseSettings) -> base_infra.InfraBase:
+    return base_infra.InfraBase(
+        request=request_http,
+        logger_adapter=log,
+        configurations=configuration,
+    )
+
+
+app = build()

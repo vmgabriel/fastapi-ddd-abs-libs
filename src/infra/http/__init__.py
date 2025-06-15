@@ -4,26 +4,26 @@ from typing import List, Type
 
 from src.fastapi_ddd_abs_libs import base
 
-from . import logging, model
+from . import fastapi, model
 
-port = Type[model.LogAdapter]
+port = Type[model.HttpModel]
 
 options: List[base.InfraOption[port]] = [
     base.InfraOption[port](
-        title="logging",
+        title="fastapi",
         priority=1,
-        type_adapter=logging.LoggingAdapter,
+        type_adapter=fastapi.FastApiAdapter,
     ),
     base.InfraOption[port](
         title="fake",
         priority=2,
-        type_adapter=logging.LoggingAdapter,
+        type_adapter=fastapi.FastApiAdapter,
     ),
 ]
 
 
 request: base.InfraRequest[port] = base.InfraRequest[port](
-    title="logger",
-    requirements=["configuration"],
+    title="http",
+    requirements=["configuration", "logger"],
     options=options,
 )

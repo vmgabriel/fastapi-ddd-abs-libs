@@ -13,10 +13,10 @@ class DebugLevelType(enum.StrEnum):
 
 
 class LogAdapter(abc.ABC):
-    configurations: settings.BaseSettings
+    configuration: settings.BaseSettings
 
-    def __init__(self, configurations: settings.BaseSettings) -> None:
-        self.configurations = configurations
+    def __init__(self, configuration: settings.BaseSettings) -> None:
+        self.configuration = configuration
 
     def critical(self, msg: str) -> None:
         return self._message(msg=msg, status=DebugLevelType.CRITICAL)

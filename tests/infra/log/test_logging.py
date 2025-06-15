@@ -1,5 +1,6 @@
 import unittest.mock as mock
 from logging import getLogger
+from typing import Type
 
 import pytest
 
@@ -19,7 +20,7 @@ def test_get_log(
 ) -> None:
     configuration = settings.DevSettings()
 
-    logger_adapter = base_infra.InfraBase(
+    logger_adapter: base_infra.InfraBase = base_infra.InfraBase[model.LogAdapter](
         request=request_log,
         logger_adapter=logger,
         configurations=configuration,
@@ -30,7 +31,7 @@ def test_get_log(
             logger_adapter.select(option=port)
         return
     else:
-        log = logger_adapter.select(option=port)
+        log: Type[model.LogAdapter] = logger_adapter.select(option=port)
     execution: model.LogAdapter | None = log(configuration=configuration)
 
     assert execution

@@ -16,7 +16,7 @@ class LoggingAdapter(model.LogAdapter):
     }
 
     def __init__(self, configuration: settings.BaseSettings) -> None:
-        super().__init__(configuration)
+        super().__init__(configuration=configuration)
         self.log = logging.getLogger(configuration.title)
         debug_level = model.DebugLevelType(configuration.debug_level.lower())
         self.log.setLevel(self.level[debug_level])
