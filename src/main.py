@@ -4,14 +4,15 @@ from typing import Any, Dict
 from src import settings
 from src.fastapi_ddd_abs_libs import base as base_infra
 from src.infra.environment_variable import request as request_environment_variable
-from src.infra.http import model as model_http
 from src.infra.http import request as request_http
 from src.infra.log import request as request_logger
+from src.infra.server import model as model_server
+from src.infra.server import request as server_request
 
 log = getLogger(__name__)
 
 
-def build() -> model_http.AppHttp:
+def build() -> model_server.ServerAdapter:
     dependencies: Dict[str, Any] = {}
     configuration = build_configuration()
 
@@ -31,7 +32,11 @@ def build() -> model_http.AppHttp:
         configuration
     ).selected_with_configuration(dependencies=dependencies)
 
-    return dependencies["http"].execute()
+    dependencies["server"] = build_server_adapter(
+        configuration
+    ).selected_with_configuration(dependencies=dependencies)
+
+    return dependencies["server"]
 
 
 def build_configuration() -> settings.BaseSettings:
@@ -57,6 +62,14 @@ def build_env_adapter(configuration: settings.BaseSettings) -> base_infra.InfraB
 def build_http_adapter(configuration: settings.BaseSettings) -> base_infra.InfraBase:
     return base_infra.InfraBase(
         request=request_http,
+        logger_adapter=log,
+        configurations=configuration,
+    )
+
+
+def build_server_adapter(configuration: settings.BaseSettings) -> base_infra.InfraBase:
+    return base_infra.InfraBase(
+        request=server_request,
         logger_adapter=log,
         configurations=configuration,
     )

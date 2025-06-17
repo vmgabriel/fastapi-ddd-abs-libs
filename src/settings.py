@@ -27,6 +27,10 @@ class BaseSettings:
 
     environment: EnvironmentType = EnvironmentType.prod
 
+    # Server
+    host: str = "0.0.0.0"
+    port: int = 3030
+
     # Documentation URL for api if this is required
     docs_url: str = "/docs"
     prefix_api_url: str = "/api"
@@ -37,6 +41,7 @@ class BaseSettings:
     logger_provider: str
     env_provider: str
     http_provider: str
+    server_provider: str
 
     @property
     def has_debug(self) -> bool:
@@ -56,6 +61,7 @@ class DevSettings(BaseSettings):
     logger_provider = "logging"
     env_provider = "dotenv-python"
     http_provider = "fastapi"
+    server_provider = "uvicorn"
 
 
 class ProdSettings(BaseSettings):
@@ -64,3 +70,4 @@ class ProdSettings(BaseSettings):
     logger_provider = "logging"
     env_provider = "dotenv-python"
     http_provider = "fastapi"
+    server_provider = "uvicorn"
