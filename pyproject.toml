@@ -33,6 +33,7 @@ dependencies = [
     "uvicorn >= 0.34.3",
     "python-dotenv >= 1.0.1",
     "PyJWT >= 2.9.0",
+    "psycopg[binary] >= 3.2.9",
 ]
 
 [project.urls]

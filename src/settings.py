@@ -52,6 +52,14 @@ class BaseSettings:
     http_provider: str
     server_provider: str
     jwt_provider: str
+    uow_provider: str
+
+    # Postgres Data
+    postgres_port: str = "5432"
+    postgres_dbname: str = ""
+    postgres_host: str = ""
+    postgres_username: str = ""
+    postgres_password: str = ""
 
     @property
     def has_debug(self) -> bool:
@@ -73,6 +81,12 @@ class DevSettings(BaseSettings):
     http_provider = "fastapi"
     server_provider = "uvicorn"
     jwt_provider = "pyjwt"
+    uow_provider = "psycopg"
+
+    postgres_dbname = "postgres"
+    postgres_host = "db"
+    postgres_username = "ghost"
+    postgres_password = "rider"
 
 
 class ProdSettings(BaseSettings):
@@ -83,3 +97,9 @@ class ProdSettings(BaseSettings):
     http_provider = "fastapi"
     server_provider = "uvicorn"
     jwt_provider = "pyjwt"
+    uow_provider = "psycopg"
+
+    postgres_dbname = "."
+    postgres_host = "."
+    postgres_username = "."
+    postgres_password = "."

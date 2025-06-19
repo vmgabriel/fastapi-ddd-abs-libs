@@ -5,7 +5,7 @@ With DDD recreate a API with Abstract Libraries, you can apply other libraries t
 ## CheckList
 
 - [x] Configure each thing in infra related to configure and use that implementation
-- [ ] Security Integration
+- [x] Security Integration
 - [ ] Integration in Infra with DB
     - [ ] Use UOW pattern
     - [ ] Use Repository Pattern

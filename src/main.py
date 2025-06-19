@@ -9,6 +9,7 @@ from src.infra.jwt import request as jwt_request
 from src.infra.log import request as request_logger
 from src.infra.server import model as model_server
 from src.infra.server import request as server_request
+from src.infra.uow import request as uow_request
 
 log = getLogger(__name__)
 
@@ -41,6 +42,10 @@ def build() -> model_server.ServerAdapter:
     dependencies["server"] = build_server_adapter(
         configuration
     ).selected_with_configuration(dependencies=dependencies)
+
+    dependencies["uow"] = build_uow_adapter(configuration).selected_with_configuration(
+        dependencies=dependencies
+    )
 
     return dependencies["server"]
 
@@ -84,6 +89,14 @@ def build_server_adapter(configuration: settings.BaseSettings) -> base_infra.Inf
 def build_jwt_adapter(configuration: settings.BaseSettings) -> base_infra.InfraBase:
     return base_infra.InfraBase(
         request=jwt_request,
+        logger_adapter=log,
+        configurations=configuration,
+    )
+
+
+def build_uow_adapter(configuration: settings.BaseSettings) -> base_infra.InfraBase:
+    return base_infra.InfraBase(
+        request=uow_request,
         logger_adapter=log,
         configurations=configuration,
     )
