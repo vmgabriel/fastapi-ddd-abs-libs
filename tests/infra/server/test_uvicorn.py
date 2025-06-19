@@ -12,7 +12,9 @@ def test_get_uvicorn_ok(
 ) -> None:
     configuration = settings.DevSettings()
     log = logging.LoggingAdapter(configuration=configuration)
-    http = fastapi_infra.FastApiAdapter(configuration=configuration, logger=log)
+    http = fastapi_infra.FastApiAdapter(
+        configuration=configuration, logger=log, jwt=mock.MagicMock()
+    )
 
     adapter = uvicorn.UvicornAdapter(configuration=configuration, http=http, logger=log)
     adapter.execute()

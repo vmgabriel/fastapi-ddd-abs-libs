@@ -1,3 +1,4 @@
+import datetime
 import enum
 from typing import Any, Dict
 
@@ -35,6 +36,14 @@ class BaseSettings:
     docs_url: str = "/docs"
     prefix_api_url: str = "/api"
 
+    # Security and Auth
+    auth_type: str = "Bearer"
+    authorization_name_attribute: str = "Authorization"
+    expiration_access_token: datetime.timedelta = datetime.timedelta(hours=2)
+    expiration_refresh_token: datetime.timedelta = datetime.timedelta(days=2)
+    auth_access_token_secret: str = ""
+    auth_refresh_token_secret: str = ""
+
     # Logger Provider for message outputs system, it can configure
     # using different types of provider,
     # it depends on adapters that you have, this applies la configuration of that logger
@@ -42,6 +51,7 @@ class BaseSettings:
     env_provider: str
     http_provider: str
     server_provider: str
+    jwt_provider: str
 
     @property
     def has_debug(self) -> bool:
@@ -62,6 +72,7 @@ class DevSettings(BaseSettings):
     env_provider = "dotenv-python"
     http_provider = "fastapi"
     server_provider = "uvicorn"
+    jwt_provider = "pyjwt"
 
 
 class ProdSettings(BaseSettings):
@@ -71,3 +82,4 @@ class ProdSettings(BaseSettings):
     env_provider = "dotenv-python"
     http_provider = "fastapi"
     server_provider = "uvicorn"
+    jwt_provider = "pyjwt"

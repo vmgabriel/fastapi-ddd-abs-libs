@@ -32,6 +32,7 @@ dependencies = [
     "python-multipart >= 0.0.20",
     "uvicorn >= 0.34.3",
     "python-dotenv >= 1.0.1",
+    "PyJWT >= 2.9.0",
 ]
 
 [project.urls]

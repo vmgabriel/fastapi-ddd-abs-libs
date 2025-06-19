@@ -7,7 +7,6 @@ import pydantic
 
 class CommandRequest(pydantic.BaseModel):
     trace_id: uuid.UUID = pydantic.Field(default_factory=uuid.uuid4)
-    # Extend that
 
 
 class CommandResponse(pydantic.BaseModel):

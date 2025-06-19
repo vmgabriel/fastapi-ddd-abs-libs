@@ -7,6 +7,8 @@ from src.domain.entrypoint import model as entrypoint_model
 from src.domain.services import command
 from src.fastapi_ddd_abs_libs import base as base_infra
 from src.infra.http import model, request
+from src.infra.jwt import pyjwt
+from src.infra.log import logging
 from src.infra.log import model as log_model
 
 logger = getLogger(__name__)
@@ -46,6 +48,7 @@ my_doc = entrypoint_http.EntrypointHttpDocumentation(
 
 my_entrypoint = entrypoint_http.EntrypointHttp(
     cmd=MyCommandTest(),
+    security=entrypoint_model.EntrypointSecurity(),
     route="/a",
     name="my-command-with-a",
     documentation=my_doc,
@@ -54,17 +57,19 @@ my_entrypoint = entrypoint_http.EntrypointHttp(
 
 def test_fastapi_add_and_inject_route() -> None:
     configuration = settings.DevSettings()
-
+    logger = logging.LoggingAdapter(configuration)
     http_build: base_infra.InfraBase = base_infra.InfraBase(
         request=request,
         logger_adapter=logger,
         configurations=configuration,
     )
+    jwt_adapter = pyjwt.AuthPyJWT(configuration=configuration, logger=logger)
 
     http_adapter = cast(
         model.HttpModel,
         http_build.select_and_inject(
-            "fastapi", {"logger": logger, "configuration": configuration}
+            "fastapi",
+            {"logger": logger, "configuration": configuration, "jwt": jwt_adapter},
         ),
     )
 

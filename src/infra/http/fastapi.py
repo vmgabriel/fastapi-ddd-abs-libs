@@ -1,15 +1,17 @@
 import itertools
-from typing import Any, Callable, Dict, TypeVar, cast
+from typing import Any, Callable, Dict, Optional, TypeVar, cast
 
 import fastapi
 
 from src.domain.entrypoint import http as domain_http
 from src.domain.entrypoint import model as model_http
 from src.domain.services import command
+from src.infra.jwt import model as jwt_model
 
 from . import model
 
 T = TypeVar("T", bound=command.Command)
+oauth2_scheme = fastapi.security.APIKeyHeader(name="Authorization")
 
 
 class FastApiAdapter(model.HttpModel):
@@ -75,14 +77,40 @@ class FastApiAdapter(model.HttpModel):
         if route.method == model_http.HttpStatusType.GET:
 
             @built_entrypoint_decorator
-            async def callable_context_get() -> command.CommandResponse:
+            async def callable_context_get(
+                token: Optional[str] = (
+                    fastapi.Depends(oauth2_scheme)
+                    if route.security.require_security
+                    else None
+                ),
+            ) -> command.CommandResponse:
+                if route.security.require_security:
+                    status_authentication = self.check_authentication(
+                        token=cast(str, token), route=route
+                    )
+                    if status_authentication.status is not model_http.StatusType.OK:
+                        self._status_error_response(status_authentication)
                 cmd = cast(command.Command, route.cmd)
                 return await cmd.execute()
 
             return
 
         @built_entrypoint_decorator
-        async def callable_context_post(payload: T) -> command.CommandResponse:
+        async def callable_context_post(
+            payload: T,
+            token: Optional[str] = (
+                fastapi.Depends(oauth2_scheme)
+                if route.security.require_security
+                else None
+            ),
+        ) -> command.CommandResponse:
+            if route.security.require_security:
+                status_authentication = self.check_authentication(
+                    token=cast(str, token), route=route
+                )
+                if status_authentication.status is not model_http.StatusType.OK:
+                    self._status_error_response(status_authentication)
+
             cmd = cast(command.Command, route.cmd)
             cmd.inject_request(payload)
             return await cmd.execute()
@@ -90,6 +118,55 @@ class FastApiAdapter(model.HttpModel):
     def _inject_routes(self) -> None:
         for route in self.routes:
             self._inject_route(route)
+
+    def _status_error_response(
+        self, status_response: jwt_model.StatusCheckJWT
+    ) -> fastapi.responses.JSONResponse:
+        status = {
+            model_http.StatusType.OK: 200,
+            model_http.StatusType.NOT_AUTHORIZED: 401,
+            model_http.StatusType.EXPIRED: 401,
+            model_http.StatusType.NOT_COMPLETE: 422,
+            model_http.StatusType.NOT_PERMISSIONS: 403,
+        }
+
+        if status[status_response.type] != 200:
+            raise fastapi.HTTPException(
+                status_code=status[status_response.type],
+                detail=status.get(status_response.type),
+            )
+
+        return fastapi.responses.JSONResponse(
+            content={"payload": {}, "errors": [{"message": status_response.message}]},
+            status_code=status[status_response.type],
+        )
+
+    def check_authentication(
+        self,
+        token: str,
+        route: domain_http.EntrypointHttp,
+    ) -> jwt_model.StatusCheckJWT:
+        if not token.startswith(self.configuration.auth_type + " "):
+            return jwt_model.StatusCheckJWT(
+                message="Not authenticated",
+                status=False,
+                type=model_http.StatusType.NOT_AUTHORIZED,
+            )
+        response = self.jwt.check_and_decode(
+            token=token.split(" ")[1], allowed_aud=route.security.audiences
+        )
+        if not response.status:
+            return jwt_model.StatusCheckJWT(
+                message=response.message,
+                status=False,
+                type=response.type,
+            )
+        return jwt_model.StatusCheckJWT(
+            message="ok",
+            status=True,
+            type=model_http.StatusType.OK,
+            data=response.data,
+        )
 
     def execute(self) -> model.AppHttp:
         self._inject_routes()
