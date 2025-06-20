@@ -1,5 +1,6 @@
 import datetime
 import enum
+import pathlib
 from typing import Any, Dict
 
 # Types
@@ -53,6 +54,7 @@ class BaseSettings:
     server_provider: str
     jwt_provider: str
     uow_provider: str
+    migrator_provider: str
 
     # Postgres Data
     postgres_port: str = "5432"
@@ -60,6 +62,8 @@ class BaseSettings:
     postgres_host: str = ""
     postgres_username: str = ""
     postgres_password: str = ""
+
+    app_route: pathlib.Path = pathlib.Path(__file__).parent
 
     @property
     def has_debug(self) -> bool:
@@ -82,6 +86,7 @@ class DevSettings(BaseSettings):
     server_provider = "uvicorn"
     jwt_provider = "pyjwt"
     uow_provider = "psycopg"
+    migrator_provider = "psycopg"
 
     postgres_dbname = "postgres"
     postgres_host = "db"
@@ -98,6 +103,7 @@ class ProdSettings(BaseSettings):
     server_provider = "uvicorn"
     jwt_provider = "pyjwt"
     uow_provider = "psycopg"
+    migrator_provider = "psycopg"
 
     postgres_dbname = "."
     postgres_host = "."

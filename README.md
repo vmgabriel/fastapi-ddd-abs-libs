@@ -7,7 +7,8 @@ With DDD recreate a API with Abstract Libraries, you can apply other libraries t
 - [x] Configure each thing in infra related to configure and use that implementation
 - [x] Security Integration
 - [ ] Integration in Infra with DB
-    - [ ] Use UOW pattern
+    - [x] Use UOW pattern
+    - [ ] Add Layer for Migrations
     - [ ] Use Repository Pattern
     - [ ] Inject that implementation
     - [ ] Add base rules for Criteria Pattern

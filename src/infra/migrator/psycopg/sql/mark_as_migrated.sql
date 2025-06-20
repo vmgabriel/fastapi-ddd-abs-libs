@@ -1,0 +1,1 @@
+INSERT INTO migration(file_name, created_at) VALUES (%s, %s);

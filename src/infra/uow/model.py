@@ -37,6 +37,12 @@ class Session(abc.ABC):
     def flush(self) -> None:
         raise NotImplementedError()
 
+    @abc.abstractmethod
+    def atomic_execute(
+        self, query: str, params: Tuple[str, ...] | None = None
+    ) -> object:
+        raise NotImplementedError()
+
 
 class UOW(abc.ABC):
     logger: log_model.LogAdapter

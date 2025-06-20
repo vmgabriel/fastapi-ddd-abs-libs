@@ -1,4 +1,4 @@
-from typing import Tuple
+from typing import LiteralString, Tuple, cast
 
 import psycopg
 
@@ -11,6 +11,11 @@ class PsycopgSession(model.Session):
 
     def commit(self) -> None:
         self._connection.commit()
+
+    def atomic_execute(
+        self, query: str, params: Tuple[str, ...] | None = None
+    ) -> object:
+        return self._session.execute(query=cast(LiteralString, query), params=params)
 
     def rollback(self) -> None:
         self._connection.rollback()

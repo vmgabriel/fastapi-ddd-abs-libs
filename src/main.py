@@ -1,12 +1,15 @@
 from logging import getLogger
-from typing import Any, Dict
+from typing import Any, Dict, List
 
 from src import settings
+from src.app.shared import scripts as shared_scripts
+from src.domain.models import script as script_domain
 from src.fastapi_ddd_abs_libs import base as base_infra
 from src.infra.environment_variable import request as request_environment_variable
 from src.infra.http import request as request_http
 from src.infra.jwt import request as jwt_request
 from src.infra.log import request as request_logger
+from src.infra.migrator import request as migrator_request
 from src.infra.server import model as model_server
 from src.infra.server import request as server_request
 from src.infra.uow import request as uow_request
@@ -47,7 +50,25 @@ def build() -> model_server.ServerAdapter:
         dependencies=dependencies
     )
 
+    dependencies["migrator"] = build_migrator_adapter(
+        configuration
+    ).selected_with_configuration(dependencies=dependencies)
+
+    execute_pre_scripts(dependencies=dependencies, configuration=configuration)
+
     return dependencies["server"]
+
+
+def execute_pre_scripts(
+    dependencies: Dict[str, Any], configuration: settings.BaseSettings
+) -> None:
+    pre_scripts: List[script_domain.ScriptFactory] = [
+        shared_scripts.MigrationBaseScriptFactory()
+    ]
+
+    for pre_script in pre_scripts:
+        pre_current_script = pre_script.inject(dependencies=dependencies)
+        pre_current_script.execute()
 
 
 def build_configuration() -> settings.BaseSettings:
@@ -97,6 +118,16 @@ def build_jwt_adapter(configuration: settings.BaseSettings) -> base_infra.InfraB
 def build_uow_adapter(configuration: settings.BaseSettings) -> base_infra.InfraBase:
     return base_infra.InfraBase(
         request=uow_request,
+        logger_adapter=log,
+        configurations=configuration,
+    )
+
+
+def build_migrator_adapter(
+    configuration: settings.BaseSettings,
+) -> base_infra.InfraBase:
+    return base_infra.InfraBase(
+        request=migrator_request,
         logger_adapter=log,
         configurations=configuration,
     )

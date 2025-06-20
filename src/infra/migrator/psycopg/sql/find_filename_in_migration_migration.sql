@@ -1,0 +1,1 @@
+SELECT * from migration WHERE file_name=(%s);
