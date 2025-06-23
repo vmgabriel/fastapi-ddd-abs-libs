@@ -6,6 +6,7 @@ from src.app.shared import scripts as shared_scripts
 from src.domain.models import script as script_domain
 from src.fastapi_ddd_abs_libs import base as base_infra
 from src.infra.environment_variable import request as request_environment_variable
+from src.infra.filter import filter_builder
 from src.infra.http import request as request_http
 from src.infra.jwt import request as jwt_request
 from src.infra.log import request as request_logger
@@ -53,6 +54,8 @@ def build() -> model_server.ServerAdapter:
     dependencies["migrator"] = build_migrator_adapter(
         configuration
     ).selected_with_configuration(dependencies=dependencies)
+
+    dependencies["filter_builder"] = filter_builder
 
     execute_pre_scripts(dependencies=dependencies, configuration=configuration)
 
