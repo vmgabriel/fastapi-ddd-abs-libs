@@ -9,7 +9,9 @@ With DDD recreate a API with Abstract Libraries, you can apply other libraries t
 - [ ] Integration in Infra with DB
     - [x] Use UOW pattern
     - [x] Add Layer for Migrations
-    - [ ] Use Repository Pattern
-    - [ ] Inject that implementation
-    - [ ] Add base rules for Criteria Pattern
-    - [ ] Add CRUD Repository
+    - [x] Use Repository Pattern
+    - [x] Use Mixin Pattern
+    - [x] Inject that implementation
+    - [x] Add base rules for Criteria Pattern
+    - [x] Add CRUD Repository
+    - [ ] Implement CRUD in a Repository using Builder
