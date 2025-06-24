@@ -1,4 +1,4 @@
-from typing import Any, List, Dict
+from typing import Any, List, Dict, Type
 
 from src.infra.migrator import model as mgrator_model
 from src.infra.log import model as log_model
@@ -9,7 +9,7 @@ from src import settings
 
 
 class DomainFactory:
-    repositories: Dict[str, List[repository.Repository]]
+    repositories: Dict[str, List[Type[repository.Repository]]]
     entrypoints: Dict[str, List[model.EntrypointModel]]
     migrations: Dict[str, List[mgrator_model.MigrateHandler]]
 
@@ -21,7 +21,7 @@ class DomainFactory:
     def add_repository(
         self, 
         repository_provider: str, 
-        repository: repository.Repository
+        repository: Type[repository.Repository]
     ) -> None:
         if repository_provider not in self.repositories:
             self.repositories[repository_provider] = [repository]

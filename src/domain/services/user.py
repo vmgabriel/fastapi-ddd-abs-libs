@@ -38,6 +38,6 @@ ROLE_PERMISSIONS: Dict[Role, List[Audience]] = {
 
 class AuthUser(pydantic.BaseModel):
     id: str
-    name: str
+    first_name: str
     last_name: str
     username: str

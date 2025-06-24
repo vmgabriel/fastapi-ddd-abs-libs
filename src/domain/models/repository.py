@@ -37,6 +37,8 @@ class Repository(abc.ABC):
     log: log_model.LogAdapter
     configuration: settings.BaseSettings
     persistence: RepositoryPersistence
+    
+    _data: RepositoryData | None
 
     def __init__(
         self,
@@ -47,13 +49,14 @@ class Repository(abc.ABC):
         self.configuration = configuration
         self.persistence = persistence
         self.log = log
+        self._data = None
 
     @abc.abstractmethod
     def serialize(self, data: Any) -> "Repository":
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def dict(self) -> Dict[str, Any]:
+    def dict(self) -> Dict[str, Any] | None:
         raise NotImplementedError()
 
     def repository_name(self) -> str:
