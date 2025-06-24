@@ -55,6 +55,7 @@ class BaseSettings:
     jwt_provider: str
     uow_provider: str
     migrator_provider: str
+    repository_provider: str
 
     # Postgres Data
     postgres_port: str = "5432"
@@ -87,6 +88,7 @@ class DevSettings(BaseSettings):
     jwt_provider = "pyjwt"
     uow_provider = "psycopg"
     migrator_provider = "psycopg"
+    repository_provider = "psycopg"
 
     postgres_dbname = "postgres"
     postgres_host = "db"
@@ -104,6 +106,7 @@ class ProdSettings(BaseSettings):
     jwt_provider = "pyjwt"
     uow_provider = "psycopg"
     migrator_provider = "psycopg"
+    repository_provider = "psycopg"
 
     postgres_dbname = "."
     postgres_host = "."
