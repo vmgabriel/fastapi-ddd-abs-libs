@@ -1,11 +1,14 @@
 import abc
 import datetime
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Type, TypeVar, cast
 
 import pydantic
 
 from src import settings
+from src.domain import libtools
 from src.infra.log import model as log_model
+
+T = TypeVar("T", bound="Repository")
 
 
 class RepositoryHasAlreadyExistsError(Exception):
@@ -37,7 +40,7 @@ class Repository(abc.ABC):
     log: log_model.LogAdapter
     configuration: settings.BaseSettings
     persistence: RepositoryPersistence
-    
+
     _data: RepositoryData | None
 
     def __init__(
@@ -61,3 +64,25 @@ class Repository(abc.ABC):
 
     def repository_name(self) -> str:
         return self.__class__.__name__
+
+
+class RepositoryGetter:
+    repositories: Dict[Type[Repository], Type[Repository]]
+
+    def __init__(self, repositories: List[Type[Repository]] | None = None) -> None:
+        self.repositories = {}
+        for repository in repositories or []:
+            parent_repository = [
+                mro_class
+                for mro_class in libtools.get_mro_class(repository)
+                if "Repository" in mro_class.__name__
+            ]
+            if not parent_repository or len(parent_repository) <= 2:
+                raise PersistenceTypeNotFoundError(
+                    f"Persistence Type Not Found for {repository.__name__}"
+                )
+            self.repositories[cast(Type[Repository], parent_repository[1])] = repository
+
+    def __add__(self, other: "RepositoryGetter") -> "RepositoryGetter":
+        self.repositories.update(other.repositories)
+        return self

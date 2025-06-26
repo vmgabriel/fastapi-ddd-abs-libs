@@ -68,7 +68,6 @@ class PsycopgMigrationHandler(model.MigratorHandler):
         to_migrate.is_migrated = True
 
     def _check_and_execute_table_base(self, session: log_uow.Session) -> None:
-        print("Checking Table of Migration")
         query = self._get_sql(file_path=self.exist_table_base_sql_path)
         response_query = session.atomic_execute(
             params=tuple(),

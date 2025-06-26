@@ -2,9 +2,15 @@ from logging import getLogger
 from typing import Any, Dict, List
 
 from src import settings
+from src.app import security as security_app
+
+# domain - apps
 from src.app.shared import scripts as shared_scripts
+from src.domain.models import domain
 from src.domain.models import script as script_domain
 from src.fastapi_ddd_abs_libs import base as base_infra
+
+# infra
 from src.infra.environment_variable import request as request_environment_variable
 from src.infra.filter import filter_builder
 from src.infra.http import request as request_http
@@ -16,9 +22,12 @@ from src.infra.server import request as server_request
 from src.infra.uow import request as uow_request
 
 log = getLogger(__name__)
+apps: List[domain.DomainFactory] = [
+    security_app.domain_security,
+]
 
 
-def build() -> model_server.ServerAdapter:
+def _build() -> Dict[str, Any]:
     dependencies: Dict[str, Any] = {}
     configuration = build_configuration()
 
@@ -39,14 +48,6 @@ def build() -> model_server.ServerAdapter:
         dependencies=dependencies
     )
 
-    dependencies["http"] = build_http_adapter(
-        configuration
-    ).selected_with_configuration(dependencies=dependencies)
-
-    dependencies["server"] = build_server_adapter(
-        configuration
-    ).selected_with_configuration(dependencies=dependencies)
-
     dependencies["uow"] = build_uow_adapter(configuration).selected_with_configuration(
         dependencies=dependencies
     )
@@ -57,8 +58,28 @@ def build() -> model_server.ServerAdapter:
 
     dependencies["filter_builder"] = filter_builder
 
+    dependencies["repository_getter"] = build_repository_getter(
+        configuration=configuration, dependencies=dependencies
+    )
+
+    dependencies["http"] = build_http_adapter(
+        configuration
+    ).selected_with_configuration(dependencies=dependencies)
+
+    integrate_http_entrypoints(dependencies=dependencies, configuration=configuration)
+
+    dependencies["server"] = build_server_adapter(
+        configuration
+    ).selected_with_configuration(dependencies=dependencies)
+
+    execute_migrations(dependencies=dependencies, configuration=configuration)
     execute_pre_scripts(dependencies=dependencies, configuration=configuration)
 
+    return dependencies
+
+
+def generate_http_server() -> model_server.ServerAdapter:
+    dependencies = _build()
     return dependencies["server"]
 
 
@@ -72,6 +93,45 @@ def execute_pre_scripts(
     for pre_script in pre_scripts:
         pre_current_script = pre_script.inject(dependencies=dependencies)
         pre_current_script.execute()
+
+
+def execute_migrations(
+    dependencies: Dict[str, Any], configuration: settings.BaseSettings
+) -> None:
+    migrator = dependencies["migrator"]
+    logger = dependencies["logger"]
+
+    logger.info("Executing Migrations")
+    for app in apps:
+        logger.info(f"Adding Migrations for {app.title}")
+        builder = domain.DomainBuilder(
+            configuration=configuration,
+            logger=logger,
+            domain_factory=app,
+        )
+        for migration in builder.get_migrations():
+            migrator.add_migration(migration)
+
+    migrator.execute()
+
+
+def integrate_http_entrypoints(
+    configuration: settings.BaseSettings,
+    dependencies: Dict[str, Any],
+) -> None:
+    logger = dependencies["logger"]
+    http = dependencies["http"]
+    logger.info("Integrating Http Entrypoints")
+    for app in apps:
+        logger.info(f"Integrating Http Entrypoints for {app.title}")
+        builder = domain.DomainBuilder(
+            configuration=configuration,
+            logger=logger,
+            domain_factory=app,
+        )
+        for entrypoint in builder.get_entrypoints("http"):
+            entrypoint.cmd.inject_dependencies(infra_dependencies=dependencies)
+            http.add_route(entrypoint)
 
 
 def build_configuration() -> settings.BaseSettings:
@@ -136,4 +196,19 @@ def build_migrator_adapter(
     )
 
 
-app = build()
+def build_repository_getter(
+    configuration: settings.BaseSettings,
+    dependencies: Dict[str, Any],
+):
+    logger = dependencies["logger"]
+    logger.info("Building Repository Getters")
+    repository_getter = domain.RepositoryGetter(repositories=[])
+    for app in apps:
+        logger.info(f"Building Repository Getters for {app.title}")
+        builder = domain.DomainBuilder(
+            configuration=configuration,
+            logger=dependencies["logger"],
+            domain_factory=app,
+        )
+        repository_getter += builder.get_repositories()
+    return repository_getter

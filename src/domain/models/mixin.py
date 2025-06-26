@@ -26,7 +26,7 @@ class GetterMixin(abc.ABC):
         )("id")
 
     @abc.abstractmethod
-    def serialize(self, data: Any) -> repository.RepositoryData:
+    def serialize(self, data: Any) -> repository.Repository:
         raise NotImplementedError()
 
     @abc.abstractmethod
@@ -53,7 +53,7 @@ class GetterListMixin(abc.ABC):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def serialize(self, data: Any) -> repository.RepositoryData:
+    def serialize(self, data: Any) -> repository.Repository:
         raise NotImplementedError()
 
 

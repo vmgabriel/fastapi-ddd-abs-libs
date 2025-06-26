@@ -35,7 +35,7 @@ class Paginator(pydantic.BaseModel):
         return self.total_pages < self.page
 
 
-class FilterDefinition:
+class FilterDefinition(abc.ABC):
     attribute: str
 
     def __init__(self, attribute: str):

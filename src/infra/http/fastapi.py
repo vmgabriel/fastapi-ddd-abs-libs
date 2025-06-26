@@ -91,6 +91,7 @@ class FastApiAdapter(model.HttpModel):
                     if status_authentication.status is not model_http.StatusType.OK:
                         self._status_error_response(status_authentication)
                 cmd = cast(command.Command, route.cmd)
+                cmd.inject_request(command.CommandRequest())
                 return await cmd.execute()
 
             return
