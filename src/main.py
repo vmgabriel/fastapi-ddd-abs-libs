@@ -2,7 +2,7 @@ from logging import getLogger
 from typing import Any, Dict, List
 
 from src import settings
-from src.app import security as security_app
+from src.app import security as security_app, shared as shared_app
 
 # domain - apps
 from src.app.shared import scripts as shared_scripts
@@ -24,6 +24,7 @@ from src.infra.uow import request as uow_request
 log = getLogger(__name__)
 apps: List[domain.DomainFactory] = [
     security_app.domain_security,
+    shared_app.domain_shared,
 ]
 
 

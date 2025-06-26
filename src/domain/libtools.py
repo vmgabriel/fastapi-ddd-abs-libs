@@ -1,11 +1,20 @@
 import importlib.util
 import inspect
 import pathlib
+import pydantic
 from importlib.machinery import ModuleSpec
 from types import ModuleType
-from typing import List, Type, cast
+from typing import List, Type, cast, Any
 
 from src.infra.migrator import model as migrator_model
+
+
+class ParameterVariable(pydantic.BaseModel):
+    name: str
+    type: Type
+    default: Any
+    required: bool
+    description: str | None
 
 
 def all_files(path: pathlib.Path) -> List[pathlib.Path]:
@@ -33,3 +42,18 @@ def get_migrate_handler(path: pathlib.Path) -> migrator_model.MigrateHandler | N
 
 def get_mro_class(obj: Type[object]) -> List[Type[object]]:
     return cast(List[Type[object]], list(inspect.getmro(obj)))
+
+
+def get_parameters_request(current_class: Type[pydantic.BaseModel]) -> List[ParameterVariable]:
+    parameters = []
+    for field_name, field in current_class.model_fields.items():
+        parameters.append(
+            ParameterVariable(
+                name=field_name, 
+                type=field.annotation, 
+                description=field.description, 
+                default=field.default,
+                required=field.is_required(),
+            )
+        )
+    return parameters
