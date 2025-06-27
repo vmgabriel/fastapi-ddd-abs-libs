@@ -34,6 +34,7 @@ dependencies = [
     "python-dotenv >= 1.0.1",
     "PyJWT >= 2.9.0",
     "psycopg[binary] >= 3.2.9",
+    "cyclopts >= 3.20.0",
 ]
 
 [project.urls]
@@ -92,6 +93,7 @@ template = "dev"
 
 [tool.hatch.envs.dev.scripts]
 run = "python run.py"
+script = "python script.py {args:*}"
 
 [tool.coverage.run]
 source_pkgs = ["tests"]

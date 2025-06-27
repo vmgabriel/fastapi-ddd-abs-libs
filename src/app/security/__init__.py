@@ -24,3 +24,8 @@ for entrypoint_provider, entrypoints in entrypoint.entrypoints.items():
         domain_security.add_entrypoint(
             entrypoint_provider=entrypoint_provider, entrypoint=current_entrypoint
         )
+
+
+for script_provider, scripts in entrypoint.scripts.items():
+    for current_script in scripts:
+        domain_security.add_script(script_provider=script_provider, script=current_script)

@@ -6,7 +6,7 @@ With DDD recreate a API with Abstract Libraries, you can apply other libraries t
 
 - [x] Configure each thing in infra related to configure and use that implementation
 - [x] Security Integration
-- [ ] Integration in Infra with DB
+- [x] Integration in Infra with DB
     - [x] Use UOW pattern
     - [x] Add Layer for Migrations
     - [x] Use Repository Pattern
@@ -14,4 +14,21 @@ With DDD recreate a API with Abstract Libraries, you can apply other libraries t
     - [x] Inject that implementation
     - [x] Add base rules for Criteria Pattern
     - [x] Add CRUD Repository
-    - [ ] Implement CRUD in a Repository using Builder
+    - [x] Implement CRUD in a Repository using Builder
+    - [x] Inject Builder Execute Migrations Base
+    - [x] Execute Migrations
+- [x] Entrypoint HealthCheck
+- [x] Integration of App Domain
+  - [x] Integrate Entrypoints
+  - [x] Integrate Repositories
+- [ ] Integration CLI
+  - [ ] Add Infra CLI Library
+  - [ ] Create Entrypoint CLI
+  - [ ] Create CLI for Generate Client
+  - [ ] Add in Domain
+  - [ ] Create First Super User
+- [ ] Integration for Profile
+  - [ ] Entrypoint for Generate Token
+  - [ ] Entrypoint for Refresh Token
+  - [ ] Entrypoint for Create Client
+  - [ ] Entrypoint for Get Profile of Client

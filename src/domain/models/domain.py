@@ -13,12 +13,14 @@ class DomainFactory:
     repositories: Dict[str, List[Type[repository.Repository]]]
     entrypoints: Dict[str, List[model.EntrypointModel]]
     migrations: Dict[str, List[migrator_model.MigrateHandler]]
+    scripts: Dict[str, List[model.EntrypointModel]]
 
     def __init__(self, title: str) -> None:
         self.title = title
         self.repositories = {}
         self.entrypoints = {}
         self.migrations = {}
+        self.scripts = {}
 
     def add_repository(
         self,
@@ -45,6 +47,12 @@ class DomainFactory:
             self.migrations[migration_provider] = [migration]
             return
         self.migrations[migration_provider].append(migration)
+        
+    def add_script(self, script_provider: str, script: model.EntrypointModel) -> None:
+        if script_provider not in self.scripts:
+            self.scripts[script_provider] = [script]
+            return
+        self.scripts[script_provider].append(script)
 
 
 class DomainBuilder:
@@ -84,3 +92,8 @@ class DomainBuilder:
         if entrypoint_provider not in self.domain_factory.entrypoints:
             return []
         return self.domain_factory.entrypoints[entrypoint_provider]
+    
+    def get_scripts(self, script_provider: str) -> List[model.EntrypointModel]:
+        if script_provider not in self.domain_factory.scripts:
+            return []
+        return self.domain_factory.scripts[script_provider]

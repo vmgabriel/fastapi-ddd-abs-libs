@@ -20,6 +20,8 @@ from src.infra.migrator import request as migrator_request
 from src.infra.server import model as model_server
 from src.infra.server import request as server_request
 from src.infra.uow import request as uow_request
+from src.infra.cli import request as cli_request
+from src.infra.cli import model as model_cli
 
 log = getLogger(__name__)
 apps: List[domain.DomainFactory] = [
@@ -72,6 +74,12 @@ def _build() -> Dict[str, Any]:
     dependencies["server"] = build_server_adapter(
         configuration
     ).selected_with_configuration(dependencies=dependencies)
+    
+    dependencies["cli"] = build_cli_adapter(
+        configuration=configuration
+    ).selected_with_configuration(dependencies=dependencies)
+    
+    integrate_cli_entrypoints(dependencies=dependencies, configuration=configuration)
 
     execute_migrations(dependencies=dependencies, configuration=configuration)
     execute_pre_scripts(dependencies=dependencies, configuration=configuration)
@@ -82,6 +90,11 @@ def _build() -> Dict[str, Any]:
 def generate_http_server() -> model_server.ServerAdapter:
     dependencies = _build()
     return dependencies["server"]
+
+
+def generate_cli_server() -> model_cli.AppCLI:
+    dependencies = _build()
+    return dependencies["cli"].execute()
 
 
 def execute_pre_scripts(
@@ -133,6 +146,26 @@ def integrate_http_entrypoints(
         for entrypoint in builder.get_entrypoints("http"):
             entrypoint.cmd.inject_dependencies(infra_dependencies=dependencies)
             http.add_route(entrypoint)
+
+
+def integrate_cli_entrypoints(
+    configuration: settings.BaseSettings,
+    dependencies: Dict[str, Any],
+) -> None:
+    logger = dependencies["logger"]
+    cli = dependencies["cli"]
+    logger.info("Integrating Cli Entrypoints")
+    for app in apps:
+        logger.info(f"Integrating Cli Entrypoints for {app.title}")
+        builder = domain.DomainBuilder(
+            configuration=configuration,
+            logger=logger,
+            domain_factory=app,
+        )
+        for script in builder.get_scripts("cli"):
+            script.cmd.inject_dependencies(infra_dependencies=dependencies)
+            cli.add_script(script)
+
 
 
 def build_configuration() -> settings.BaseSettings:
@@ -213,3 +246,13 @@ def build_repository_getter(
         )
         repository_getter += builder.get_repositories()
     return repository_getter
+
+
+def build_cli_adapter(
+    configuration: settings.BaseSettings,
+) -> base_infra.InfraBase:
+    return base_infra.InfraBase(
+        request=cli_request,
+        logger_adapter=log,
+        configurations=configuration,
+    )

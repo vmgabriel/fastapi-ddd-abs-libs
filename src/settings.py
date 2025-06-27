@@ -56,6 +56,7 @@ class BaseSettings:
     uow_provider: str
     migrator_provider: str
     repository_provider: str
+    cli_provider: str
 
     # Postgres Data
     postgres_port: str = "5432"
@@ -89,6 +90,7 @@ class DevSettings(BaseSettings):
     uow_provider = "psycopg"
     migrator_provider = "psycopg"
     repository_provider = "psycopg"
+    cli_provider = "cyclopts"
 
     postgres_dbname = "postgres"
     postgres_host = "db"
@@ -107,6 +109,7 @@ class ProdSettings(BaseSettings):
     uow_provider = "psycopg"
     migrator_provider = "psycopg"
     repository_provider = "psycopg"
+    cli_provider = "cyclopts"
 
     postgres_dbname = "."
     postgres_host = "."
