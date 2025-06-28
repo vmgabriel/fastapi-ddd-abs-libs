@@ -20,7 +20,7 @@ def test_pyjwt_check_authentication_ok() -> None:
 
     token_model = jwt_adapter.encode(
         current_user=user.AuthUser(
-            id="1", first_name="Gabriel", last_name="Vargas", username="vmgabriel"
+            id="1", name="Gabriel", last_name="Vargas", username="vmgabriel"
         ),
         aud=["role:admin"],
     )
@@ -55,7 +55,7 @@ def test_pyjwt_encode_ok() -> None:
 
     token_model = jwt_adapter.encode(
         current_user=user.AuthUser(
-            id="1", first_name="Gabriel", last_name="Vargas", username="vmgabriel"
+            id="1", name="Gabriel", last_name="Vargas", username="vmgabriel"
         ),
         aud=["role:admin"],
     )

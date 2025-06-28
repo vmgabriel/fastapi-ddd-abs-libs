@@ -2,15 +2,15 @@ from src.infra.migrator import model as migrator_model
 
 migrator_script = """
 CREATE TABLE IF NOT EXISTS tbl_profile(
-    id VARCHAR(25) PRIMARY KEY NOT NULL,
-    name VARCHAR(100) NOT NULL,
-    last_name VARCHAR(100) NOT NULL,
-    username VARCHAR(50) NOT NULL,
-    email VARCHAR(50) NOT NULL,
+    id VARCHAR(100) PRIMARY KEY NOT NULL,
+    phone VARCHAR(25) NOT NULL,
+    icon_url VARCHAR(200) NULL,
     is_activated BOOLEAN NOT NULL DEFAULT TRUE,
+    user_id VARCHAR(25) NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
-    deleted_at TIMESTAMP NULL
+    deleted_at TIMESTAMP NULL,
+    FOREIGN KEY (user_id) REFERENCES tbl_user(id) ON DELETE CASCADE ON UPDATE CASCADE
 );
 """
 

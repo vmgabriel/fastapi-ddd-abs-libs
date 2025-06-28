@@ -19,16 +19,17 @@ With DDD recreate a API with Abstract Libraries, you can apply other libraries t
     - [x] Execute Migrations
 - [x] Entrypoint HealthCheck
 - [x] Integration of App Domain
-  - [x] Integrate Entrypoints
-  - [x] Integrate Repositories
-- [ ] Integration CLI
-  - [ ] Add Infra CLI Library
-  - [ ] Create Entrypoint CLI
-  - [ ] Create CLI for Generate Client
-  - [ ] Add in Domain
-  - [ ] Create First Super User
+    - [x] Integrate Entrypoints
+    - [x] Integrate Repositories
+- [X] Integration CLI
+    - [X] Add Infra CLI Library
+    - [X] Create Entrypoint CLI
+    - [X] Create CLI for Generate Client
+    - [X] Add in Domain
+    - [X] Create First Super User
+    - [ ] Organize Code
 - [ ] Integration for Profile
-  - [ ] Entrypoint for Generate Token
-  - [ ] Entrypoint for Refresh Token
-  - [ ] Entrypoint for Create Client
-  - [ ] Entrypoint for Get Profile of Client
+    - [ ] Entrypoint for Generate Token
+    - [ ] Entrypoint for Refresh Token
+    - [ ] Entrypoint for Create Client
+    - [ ] Entrypoint for Get Profile of Client

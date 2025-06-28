@@ -7,6 +7,7 @@ import pydantic
 from src import settings
 from src.domain import libtools
 from src.infra.log import model as log_model
+from src.infra.uow.model import Session
 
 T = TypeVar("T", bound="Repository")
 
@@ -25,9 +26,9 @@ class PersistenceTypeNotFoundError(Exception):
 
 class RepositoryData(pydantic.BaseModel):
     id: str
-    created_at: datetime.datetime
-    updated_at: datetime.datetime
-    deleted_at: datetime.datetime | None
+    deleted_at: datetime.datetime | None = None
+    created_at: datetime.datetime = datetime.datetime.now()
+    updated_at: datetime.datetime = datetime.datetime.now()
     is_activated: bool = True
 
 
@@ -45,13 +46,13 @@ class Repository(abc.ABC):
 
     def __init__(
         self,
-        configuration: settings.BaseSettings,
-        persistence: RepositoryPersistence,
-        log: log_model.LogAdapter,
+        *args,
+        **kwargs,
     ) -> None:
-        self.configuration = configuration
-        self.persistence = persistence
-        self.log = log
+        super().__init__(*args, **kwargs)
+        self.configuration = kwargs.get("configuration")
+        self.persistence = kwargs.get("persistence")
+        self.log = kwargs.get("log")
         self._data = None
 
     @abc.abstractmethod
@@ -68,6 +69,9 @@ class Repository(abc.ABC):
 
 class RepositoryGetter:
     repositories: Dict[Type[Repository], Type[Repository]]
+
+    configuration: settings.BaseSettings | None = None
+    log: log_model.LogAdapter | None = None
 
     def __init__(self, repositories: List[Type[Repository]] | None = None) -> None:
         self.repositories = {}
@@ -86,3 +90,21 @@ class RepositoryGetter:
     def __add__(self, other: "RepositoryGetter") -> "RepositoryGetter":
         self.repositories.update(other.repositories)
         return self
+
+    def inject_dependencies(self, dependencies: Dict[str, Any]) -> None:
+        self.configuration = dependencies["configuration"]
+        self.log = dependencies["logger"]
+        self.filter_builder = dependencies["filter_builder"]
+
+    def __call__(self, repository: Type[T], session: Session) -> T:
+        if repository not in self.repositories:
+            raise PersistenceTypeNotFoundError(
+                f"Repository Type Not Found for {repository.__name__}"
+            )
+        current_repository = cast(Type[T], self.repositories[repository])
+        return current_repository(
+            configuration=self.configuration,
+            log=self.log,
+            session=session,
+            filter_builder=self.filter_builder,
+        )

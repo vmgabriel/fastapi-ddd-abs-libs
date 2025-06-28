@@ -3,13 +3,13 @@ from typing import Any, Dict, List
 
 from src import settings
 from src.app import security as security_app, shared as shared_app
-
 # domain - apps
 from src.app.shared import scripts as shared_scripts
 from src.domain.models import domain
 from src.domain.models import script as script_domain
 from src.fastapi_ddd_abs_libs import base as base_infra
-
+from src.infra.cli import model as model_cli
+from src.infra.cli import request as cli_request
 # infra
 from src.infra.environment_variable import request as request_environment_variable
 from src.infra.filter import filter_builder
@@ -20,8 +20,6 @@ from src.infra.migrator import request as migrator_request
 from src.infra.server import model as model_server
 from src.infra.server import request as server_request
 from src.infra.uow import request as uow_request
-from src.infra.cli import request as cli_request
-from src.infra.cli import model as model_cli
 
 log = getLogger(__name__)
 apps: List[domain.DomainFactory] = [
@@ -74,11 +72,11 @@ def _build() -> Dict[str, Any]:
     dependencies["server"] = build_server_adapter(
         configuration
     ).selected_with_configuration(dependencies=dependencies)
-    
+
     dependencies["cli"] = build_cli_adapter(
         configuration=configuration
     ).selected_with_configuration(dependencies=dependencies)
-    
+
     integrate_cli_entrypoints(dependencies=dependencies, configuration=configuration)
 
     execute_migrations(dependencies=dependencies, configuration=configuration)
@@ -167,7 +165,6 @@ def integrate_cli_entrypoints(
             cli.add_script(script)
 
 
-
 def build_configuration() -> settings.BaseSettings:
     return settings.DevSettings()
 
@@ -237,6 +234,7 @@ def build_repository_getter(
     logger = dependencies["logger"]
     logger.info("Building Repository Getters")
     repository_getter = domain.RepositoryGetter(repositories=[])
+    repository_getter.inject_dependencies(dependencies=dependencies)
     for app in apps:
         logger.info(f"Building Repository Getters for {app.title}")
         builder = domain.DomainBuilder(

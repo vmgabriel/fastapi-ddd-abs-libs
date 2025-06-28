@@ -10,3 +10,5 @@ migrations = [
     for file in libtools.all_files(path=current_migration_path)
     if file.name != "__init__.py" and file != "."
 ]
+
+migrations.sort(key=lambda migration: migration.name.split("_")[0] if migration else 0)

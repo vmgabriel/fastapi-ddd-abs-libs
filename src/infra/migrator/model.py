@@ -52,8 +52,7 @@ class MigratorHandler(abc.ABC):
     def execute(self) -> None:
         with self.uow.session() as session:
             for to_migrate in self.migrations:
-                if not to_migrate:
-                    continue
+                self.logger.info(f"Checking Migrating {to_migrate.name}")
                 if self._is_migrated(to_migrate, session):
                     self.logger.info(f"Migration {to_migrate.name} already completed")
                     continue
@@ -68,7 +67,7 @@ class MigratorHandler(abc.ABC):
                     )
                     self._rollback_migration(to_migrate, session)
             session.commit()
-            if all(not migration.is_migrated for migration in self.migrations if migration):
+            if all(not migration.is_migrated for migration in self.migrations):
                 self.logger.info("Not Require Migrations - All Completed")
 
     def pre_execute(self) -> None:

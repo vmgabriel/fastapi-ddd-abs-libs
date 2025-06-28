@@ -1,27 +1,30 @@
 from typing import Any
 
-from src.app.security.domain import ProfileRepository
+from src.app.security.domain import UserRepository
 from src.domain.models import repository
 from src.infra.mixin import postgres
 
 
-class PostgresProfileRepository(
+class PostgresUserRepository(
     postgres.PostgresGetterListMixin,
     postgres.PostgresGetterMixin,
     postgres.PostgresCreatorMixin,
     postgres.PostgresUpdaterMixin,
     postgres.PostgresDeleterMixin,
-    ProfileRepository,
+    UserRepository,
 ):
     def __init__(self, *args, **kwargs) -> None:
         kwargs["repository_persistence"] = kwargs["persistency"] = (
             repository.RepositoryPersistence(
-                table_name="tbl_profile",
+                table_name="tbl_user",
                 fields=[
                     "id",
-                    "user_id",
-                    "phone",
-                    "icon_url",
+                    "name",
+                    "last_name",
+                    "username",
+                    "email",
+                    "password",
+                    "permissions",
                     "created_at",
                     "updated_at",
                     "deleted_at",
@@ -31,6 +34,6 @@ class PostgresProfileRepository(
         )
         super().__init__(*args, **kwargs)
 
-    def serialize(self, data: Any) -> "PostgresProfileRepository":
+    def serialize(self, data: Any) -> "PostgresUserRepository":
         self._data = None
         return self

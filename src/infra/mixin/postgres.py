@@ -2,8 +2,6 @@ import abc
 from typing import Generator, Iterable, List, cast
 
 from src.domain.models import filter, mixin, repository
-from src.infra.log import model as model_log
-from src.infra.uow import model as model_uow
 
 _SELECT_DEFAULT = "SELECT * FROM {} WHERE {};"
 _SELECT_COUNT_DEFAULT = "SELECT COUNT(*) FROM {};"
@@ -95,7 +93,7 @@ class PostgresCreatorMixin(mixin.CreatorMixin):
         self.logger.info(f"Query [{script}]")
         result = self._session.atomic_execute(query=script, params=fields)
         new_id = getattr(result, "fetchone", lambda: "")()
-        new.id = new_id
+        new.id = new_id[0] if new_id else ""
         return new
 
 
@@ -150,18 +148,10 @@ class PostgresCRUDMixin(
 ):
     def __init__(
         self,
-        repository_persistence: repository.RepositoryPersistence,
-        session: model_uow.Session,
-        logger: model_log.LogAdapter,
-        filter_builder: filter.FilterBuilder,
         *args,
         **kwargs,
     ) -> None:
         super().__init__(
-            repository_persistence=repository_persistence,
-            session=session,
-            logger=logger,
-            filter_builder=filter_builder,
             *args,
             **kwargs,
         )
