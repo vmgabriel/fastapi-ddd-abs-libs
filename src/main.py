@@ -2,7 +2,9 @@ from logging import getLogger
 from typing import Any, Dict, List
 
 from src import settings
-from src.app import security as security_app, shared as shared_app
+from src.app import security as security_app
+from src.app import shared as shared_app
+
 # domain - apps
 from src.app.shared import scripts as shared_scripts
 from src.domain.models import domain
@@ -10,6 +12,7 @@ from src.domain.models import script as script_domain
 from src.fastapi_ddd_abs_libs import base as base_infra
 from src.infra.cli import model as model_cli
 from src.infra.cli import request as cli_request
+
 # infra
 from src.infra.environment_variable import request as request_environment_variable
 from src.infra.filter import filter_builder
