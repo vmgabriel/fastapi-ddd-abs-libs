@@ -34,10 +34,7 @@ class GetDataCommand(command.Command):
         )
 
 
-# Create Super User
-
-
-class CreateSuperUserCommandData(command.CommandRequest):
+class CreateUserData(command.CommandRequest):
     name: str
     last_name: str
     username: str
@@ -47,7 +44,7 @@ class CreateSuperUserCommandData(command.CommandRequest):
     repeat_password: pydantic.SecretStr
 
     @pydantic.model_validator(mode="after")
-    def check_passwords_match(self) -> "CreateSuperUserCommandData":
+    def check_passwords_match(self) -> "CreateUserData":
         if self.password != self.repeat_password:
             raise ValueError("Current Password and Repeat Password must match!")
         return self
@@ -69,6 +66,12 @@ class CreateSuperUserCommandData(command.CommandRequest):
             user_id=user_id,
             phone=self.phone,
         )
+
+
+# Create Super User
+
+
+class CreateSuperUserCommandData(CreateUserData): ...  # noqa: E701
 
 
 class CreateSuperUserCommand(command.Command):
@@ -234,4 +237,79 @@ class RefreshAuthenticateCommand(command.Command):
         return command.CommandResponse(
             trace_id=getattr(current_request, "trace_id", uuid.uuid4()),
             payload=authentication_response.model_dump(),
+        )
+
+
+# Create Basic User
+
+
+class CreateBasicUserCommandData(CreateUserData): ...  # noqa: E701
+
+
+class CreatedBasicUser(pydantic.BaseModel):
+    id: str
+    id_profile: str
+    username: str
+
+
+class CreateBasicUserCommand(command.Command):
+    logger: log_model.LogAdapter
+    repository_getter: repository_model.RepositoryGetter
+    uow: UOW
+
+    def __init__(self):
+        super().__init__(
+            requirements=["logger", "uow", "repository_getter"],
+            request_type=CreateBasicUserCommandData,
+        )
+
+    async def execute(self) -> command.CommandResponse:
+        self.logger = self._deps["logger"]
+        self.uow = self._deps["uow"]
+        self.repository_getter = self._deps["repository_getter"]
+
+        if self.parameters.get("version") != "v1":
+            raise ValueError("Version not found")
+
+        if not self.request:
+            raise ValueError("Request not found")
+
+        current_request = cast(CreateBasicUserCommandData, self.request)
+
+        with self.uow.session() as session:
+            repository_user = cast(
+                domain_security.UserRepository,
+                self.repository_getter(
+                    repository=domain_security.UserRepository,
+                    session=session,
+                ),
+            )
+
+            repository_profile = cast(
+                domain_security.ProfileRepository,
+                self.repository_getter(
+                    repository=domain_security.ProfileRepository,
+                    session=session,
+                ),
+            )
+
+            new_repository_user = repository_user.create(
+                new=current_request.to_repository_user(["role:client"])
+            )
+
+            new_repository_profile = repository_profile.create(
+                new=current_request.to_repository_profile(str(new_repository_user.id))
+            )
+
+            session.commit()
+
+            response = CreatedBasicUser(
+                id=str(new_repository_user.id),
+                id_profile=str(new_repository_profile.id),
+                username=current_request.username,
+            )
+
+        return command.CommandResponse(
+            trace_id=getattr(self.request, "trace_id", uuid.uuid4()),
+            payload=response.model_dump(),
         )

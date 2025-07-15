@@ -38,7 +38,7 @@ class GetDataEntrypointHttp(entrypoint_http.EntrypointHttp):
         )
 
 
-# Entrypoint for Generate TOKEN
+# Entrypoint for Generate and update TOKEN
 
 
 class AuthenticationEntrypointDocumentationHttp(
@@ -151,5 +151,57 @@ class RefreshTokenEntrypointHttp(entrypoint_http.EntrypointHttp):
             documentation=RefreshTokenEntrypointHttpDocumentation(),
             security=entrypoint_model.EntrypointSecurity(),
             cmd=security_command.RefreshAuthenticateCommand(),
+            path_parameters=["version"],
+        )
+
+
+# Entrypoint for Create User
+
+
+class CreateUserEntrypointDocumentationHttp(
+    entrypoint_http.ExampleEntrypointDocumentationHttp
+):
+    def __init__(self):
+        super().__init__(
+            status_code=200,
+            description="Create User based in the information related to payload",
+            example_name="Create User Correctly",
+            content={
+                "trace_id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+                "payload": {
+                    "id": "id-id-id-id-id",
+                    "id_profile": "id-id-id-id-id",
+                    "username": "my_username",
+                },
+                "errors": [],
+            },
+        )
+
+
+class CreateUserEntrypointHttpDocumentation(
+    entrypoint_http.EntrypointHttpDocumentation
+):
+    def __init__(self):
+        super().__init__(
+            summary="Generate a basic User",
+            description="Creating a User based in entrypoint",
+            responses=[
+                CreateUserEntrypointDocumentationHttp(),
+                entrypoint_http.VersionNotFoundEntrypointDocumentationHttp(),
+            ],
+            tags=["auth"],
+        )
+
+
+class CreateUserEntrypointHttp(entrypoint_http.EntrypointHttp):
+    def __init__(self):
+        super().__init__(
+            route="/{version}/users",
+            name="Create Client Users",
+            status_code=200,
+            method=entrypoint_model.HttpStatusType.POST,
+            documentation=CreateUserEntrypointHttpDocumentation(),
+            security=entrypoint_model.EntrypointSecurity(),
+            cmd=security_command.CreateBasicUserCommand(),
             path_parameters=["version"],
         )

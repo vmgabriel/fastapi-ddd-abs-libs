@@ -1,5 +1,8 @@
 import abc
+import functools
 from typing import Generator, Iterable, List, Tuple, cast
+
+import pydantic
 
 from src.domain.models import filter, mixin, repository
 from src.domain.models.repository import RepositoryData
@@ -92,9 +95,20 @@ class PostgresCreatorMixin(mixin.CreatorMixin):
             ",".join(self.repository_persistence.fields),
             ",".join(["%s" for _ in self.repository_persistence.fields]),
         )
-        fields = tuple(
+
+        get_fields = (
             getattr(new, field) for field in self.repository_persistence.fields
         )
+        fields_to_attr = functools.partial(
+            map,
+            lambda field: (
+                field.get_secret_value()
+                if isinstance(field, pydantic.SecretStr)
+                else field
+            ),
+        )
+
+        fields = tuple(fields_to_attr(get_fields))
         self.logger.info(f"Query [{script}]")
         result = self._session.atomic_execute(query=script, params=fields)
         new_id = getattr(result, "fetchone", lambda: "")()
