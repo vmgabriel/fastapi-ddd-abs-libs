@@ -1,14 +1,19 @@
 import abc
-from typing import Any, Dict
 
+import pydantic
+
+from src.domain import libtools
 from src.domain.models import mixin, repository
 from src.domain.services import user
 
 
 class UserData(repository.RepositoryData, user.AuthUser):
     email: str
-    password: str
+    password: pydantic.SecretStr
     permissions: list[str]
+
+    def is_auth(self, password: pydantic.SecretStr) -> bool:
+        return libtools.check_password(password, self.password)
 
 
 class ProfileData(repository.RepositoryData):
@@ -29,11 +34,6 @@ class ProfileRepository(
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
 
-    def dict(self) -> Dict[str, Any]:
-        if not self._data:
-            return {}
-        return self._data.model_dump()
-
 
 class UserRepository(
     repository.Repository,
@@ -47,7 +47,6 @@ class UserRepository(
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
 
-    def dict(self) -> Dict[str, Any]:
-        if not self._data:
-            return {}
-        return self._data.model_dump()
+    @abc.abstractmethod
+    def by_username(self, username: str) -> UserData | None:
+        raise NotImplementedError()

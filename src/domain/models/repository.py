@@ -1,6 +1,6 @@
 import abc
 import datetime
-from typing import Any, Dict, List, Type, TypeVar, cast
+from typing import Any, Dict, List, Type, TypeVar, Union, cast
 
 import pydantic
 
@@ -42,25 +42,18 @@ class Repository(abc.ABC):
     configuration: settings.BaseSettings
     persistence: RepositoryPersistence
 
-    _data: RepositoryData | None
-
     def __init__(
         self,
         *args,
         **kwargs,
     ) -> None:
         super().__init__(*args, **kwargs)
-        self.configuration = kwargs.get("configuration")
-        self.persistence = kwargs.get("persistence")
-        self.log = kwargs.get("log")
-        self._data = None
+        self.configuration = cast(settings.BaseSettings, kwargs.get("configuration"))
+        self.persistence = cast(RepositoryPersistence, kwargs.get("persistence"))
+        self.log = cast(log_model.LogAdapter, kwargs.get("log"))
 
     @abc.abstractmethod
-    def serialize(self, data: Any) -> "Repository":
-        raise NotImplementedError()
-
-    @abc.abstractmethod
-    def dict(self) -> Dict[str, Any] | None:
+    def serialize(self, data: Any) -> RepositoryData | None:
         raise NotImplementedError()
 
     def repository_name(self) -> str:
@@ -96,7 +89,9 @@ class RepositoryGetter:
         self.log = dependencies["logger"]
         self.filter_builder = dependencies["filter_builder"]
 
-    def __call__(self, repository: Type[T], session: Session) -> T:
+    def __call__(
+        self, repository: Union[Type[Repository], Type[T]], session: Session
+    ) -> T:
         if repository not in self.repositories:
             raise PersistenceTypeNotFoundError(
                 f"Repository Type Not Found for {repository.__name__}"

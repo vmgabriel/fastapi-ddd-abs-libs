@@ -27,8 +27,9 @@ With DDD recreate a API with Abstract Libraries, you can apply other libraries t
     - [X] Create CLI for Generate Client
     - [X] Add in Domain
     - [X] Create First Super User
-    - [ ] Organize Code
+    - [x] Organize Code - PENDING
 - [ ] Integration for Profile
+    - [X] Challenge for Path Params - Query Params and Payload
     - [ ] Entrypoint for Generate Token
     - [ ] Entrypoint for Refresh Token
     - [ ] Entrypoint for Create Client

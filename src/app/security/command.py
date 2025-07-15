@@ -1,5 +1,5 @@
 import uuid
-from typing import List
+from typing import List, cast
 
 import pydantic
 
@@ -7,9 +7,14 @@ from src.domain import libtools
 from src.domain.models import repository as repository_model
 from src.domain.models.filter import FilterBuilder
 from src.domain.services import command
+from src.infra.jwt import model as jwt_model
 from src.infra.log import model as log_model
 from src.infra.uow.model import UOW
+
 from . import domain as domain_security
+from .services import authentication as authenticate_service
+
+# Get Data
 
 
 class GetDataCommand(command.Command):
@@ -27,6 +32,9 @@ class GetDataCommand(command.Command):
             trace_id=getattr(self.request, "trace_id", uuid.uuid4()),
             payload={"message": "ok"},
         )
+
+
+# Create Super User
 
 
 class CreateSuperUserCommandData(command.CommandRequest):
@@ -51,7 +59,7 @@ class CreateSuperUserCommandData(command.CommandRequest):
             last_name=self.last_name,
             username=self.username,
             email=self.email,
-            password=libtools.encrypt_password(self.password.get_secret_value()),
+            password=pydantic.SecretStr(libtools.encrypt_password(self.password)),
             permissions=permissions,
         )
 
@@ -77,29 +85,38 @@ class CreateSuperUserCommand(command.Command):
 
     async def execute(self) -> command.CommandResponse:
         self.logger = self._deps["logger"]
-        self.repository_getter = self._deps["repository_getter"]
+        self.repository_getter = cast(
+            repository_model.RepositoryGetter, self._deps["repository_getter"]
+        )
         self.uow = self._deps["uow"]
         self.filter_builder = self._deps["filter_builder"]
         self.logger.info("Executing GetDataCommand")
-        self.logger.info(f"Creating Super User {type(self.request)}")
+
+        current_request = cast(CreateSuperUserCommandData, self.request)
 
         with self.uow.session() as session:
-            repository_user = self.repository_getter(
-                repository=domain_security.UserRepository,
-                session=session,
+            repository_user = cast(
+                domain_security.UserRepository,
+                self.repository_getter(
+                    repository=domain_security.UserRepository,
+                    session=session,
+                ),
             )
 
-            repository_profile = self.repository_getter(
-                repository=domain_security.ProfileRepository,
-                session=session,
+            repository_profile = cast(
+                domain_security.ProfileRepository,
+                self.repository_getter(
+                    repository=domain_security.ProfileRepository,
+                    session=session,
+                ),
             )
 
             new_repository_user = repository_user.create(
-                new=self.request.to_repository_user(["role:admin"])
+                new=current_request.to_repository_user(["role:admin"])
             )
 
-            new_repository_data = repository_profile.create(
-                new=self.request.to_repository_profile(str(new_repository_user.id))
+            repository_profile.create(
+                new=current_request.to_repository_profile(str(new_repository_user.id))
             )
 
             session.commit()
@@ -107,4 +124,60 @@ class CreateSuperUserCommand(command.Command):
         return command.CommandResponse(
             trace_id=getattr(self.request, "trace_id", uuid.uuid4()),
             payload={"message": "ok"},
+        )
+
+
+# Authenticate User
+
+
+class AuthenticateUserCommandData(command.CommandRequest):
+    username: str
+    password: pydantic.SecretStr
+
+
+class AuthenticateCommand(command.Command):
+    logger: log_model.LogAdapter
+    repository_getter: repository_model.RepositoryGetter
+    uow: UOW
+    jwt: jwt_model.AuthJWT
+
+    def __init__(self):
+        super().__init__(
+            requirements=["logger", "uow", "jwt", "repository_getter"],
+            request_type=AuthenticateUserCommandData,
+        )
+
+    async def execute(self) -> command.CommandResponse:
+        self.logger = self._deps["logger"]
+        self.uow = self._deps["uow"]
+        self.jwt = self._deps["jwt"]
+        self.repository_getter = self._deps["repository_getter"]
+
+        if self.parameters.get("version") != "v1":
+            raise ValueError("Version not found")
+
+        if not self.request:
+            raise ValueError("Request not found")
+
+        current_request = cast(AuthenticateUserCommandData, self.request)
+
+        with self.uow.session() as session:
+            repository_user = cast(
+                domain_security.UserRepository,
+                self.repository_getter(
+                    repository=domain_security.UserRepository,
+                    session=session,
+                ),
+            )
+            authentication_response = authenticate_service.authenticate(
+                jwt=self.jwt,
+                logger=self.logger,
+                user_repository=repository_user,
+                username=current_request.username,
+                password=current_request.password,
+            )
+
+        return command.CommandResponse(
+            trace_id=getattr(current_request, "trace_id", uuid.uuid4()),
+            payload=authentication_response.model_dump(),
         )

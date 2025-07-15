@@ -11,7 +11,15 @@ from src.infra.jwt import model as jwt_model
 from . import model
 
 T = TypeVar("T", bound=command.Command)
+V = TypeVar("V", bound=command.CommandRequest)
+X = Optional[str]
 oauth2_scheme = fastapi.security.APIKeyHeader(name="Authorization")
+
+
+call_function_str = """
+async def endpoint_function_handler({str_parameters}):
+    return await endpoint_base({return_str_parameters})
+"""
 
 
 class FastApiAdapter(model.HttpModel):
@@ -45,7 +53,9 @@ class FastApiAdapter(model.HttpModel):
         }
         return status_callable[route.method]
 
-    def _generate_documentation(self, route: domain_http.EntrypointHttp):
+    def _generate_documentation(
+        self, route: domain_http.EntrypointHttp
+    ) -> Dict[int, Any]:
         response_documentation = {}
         router_documentation = route.documentation
         for status_code, responses_group in itertools.groupby(
@@ -62,9 +72,67 @@ class FastApiAdapter(model.HttpModel):
                     self.responses_type[resp.type]: {"examples": examples_responses}
                 },
             }
+        return response_documentation
+
+    def _create_dynamic_endpoint(self, route: domain_http.EntrypointHttp) -> Callable:
+        is_get = route.method == model_http.HttpStatusType.GET
+        with_token = route.security.require_security
+
+        async def endpoint_base(**kwargs: Any) -> command.CommandResponse:
+            if with_token:
+                token = fastapi.Depends(oauth2_scheme)
+                status_authentication = self.check_authentication(
+                    token=cast(str, token), route=route
+                )
+                if status_authentication.status is not model_http.StatusType.OK:
+                    self._status_error_response(status_authentication)
+
+            cmd = cast(command.Command, route.cmd)
+
+            cmd.inject_parameters(
+                {
+                    parameter: kwargs.get(parameter, "")
+                    for parameter in route.path_parameters
+                }
+            )
+            if is_get:
+                request_data = command.CommandRequest()
+                cmd.inject_request(request_data)
+            else:
+                cmd.inject_request(kwargs.get("payload", ...))
+
+            return await cmd.execute()
+
+        namespace = locals()
+        parameters = {parameter: "str" for parameter in route.path_parameters}
+        if with_token:
+            parameters.update({"token": "fastapi.Depends(oauth2_scheme)"})
+        if is_get:
+            parameters.update({"q": "command.CommandRequest | None"})
+            namespace["command"] = command
+        else:
+            parameters.update({"payload": route.cmd.request_type.__name__})
+
+        def create_dynamic_function() -> str:
+            str_parameters = ",".join(
+                f"{name}: {type_}" for name, type_ in parameters.items()
+            )
+            return_str_parameters = ",".join(
+                f"{name}={name}" for name, _ in parameters.items()
+            )
+            return call_function_str.format(
+                str_parameters=str_parameters,
+                return_str_parameters=return_str_parameters,
+            )
+
+        namespace[route.cmd.request_type.__name__] = route.cmd.request_type
+        exec(create_dynamic_function(), namespace)
+        return namespace["endpoint_function_handler"]
 
     def _inject_route(self, route: domain_http.EntrypointHttp) -> None:
-        built_entrypoint_decorator = self._get_decorator(route)(
+        endpoint = self._create_dynamic_endpoint(route)
+
+        decorator = self._get_decorator(route)(
             path=route.route,
             name=route.name,
             status_code=route.status_code,
@@ -74,47 +142,9 @@ class FastApiAdapter(model.HttpModel):
             description=route.documentation.description,
         )
 
-        if route.method == model_http.HttpStatusType.GET:
+        decorated_endpoint = decorator(endpoint)
 
-            @built_entrypoint_decorator
-            async def callable_context_get(
-                token: Optional[str] = (
-                    fastapi.Depends(oauth2_scheme)
-                    if route.security.require_security
-                    else None
-                ),
-            ) -> command.CommandResponse:
-                if route.security.require_security:
-                    status_authentication = self.check_authentication(
-                        token=cast(str, token), route=route
-                    )
-                    if status_authentication.status is not model_http.StatusType.OK:
-                        self._status_error_response(status_authentication)
-                cmd = cast(command.Command, route.cmd)
-                cmd.inject_request(command.CommandRequest())
-                return await cmd.execute()
-
-            return
-
-        @built_entrypoint_decorator
-        async def callable_context_post(
-            payload: T,
-            token: Optional[str] = (
-                fastapi.Depends(oauth2_scheme)
-                if route.security.require_security
-                else None
-            ),
-        ) -> command.CommandResponse:
-            if route.security.require_security:
-                status_authentication = self.check_authentication(
-                    token=cast(str, token), route=route
-                )
-                if status_authentication.status is not model_http.StatusType.OK:
-                    self._status_error_response(status_authentication)
-
-            cmd = cast(command.Command, route.cmd)
-            cmd.inject_request(payload)
-            return await cmd.execute()
+        setattr(self.app, f"endpoint_{route.name}", decorated_endpoint)
 
     def _inject_routes(self) -> None:
         for route in self.routes:

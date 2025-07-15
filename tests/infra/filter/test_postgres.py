@@ -20,7 +20,7 @@ def test_asc_desc_filter_ok() -> None:
 @pytest.mark.parametrize(
     "expected_value,values",
     [
-        ("test", "'test'"),
+        ("test", "test"),
         (1, "1"),
         (1.2, "1.2"),
         (True, "true"),
@@ -29,7 +29,7 @@ def test_asc_desc_filter_ok() -> None:
 )
 def test_equal_definition_filter(expected_value: Any, values: str) -> None:
     expected_attribute = "test"
-    expected_definition = "{attribute} = ?".format(attribute=expected_attribute)
+    expected_definition = "{attribute} = %s".format(attribute=expected_attribute)
     definition_filter = filter_postgres.postgres_filter_builder.build(
         type_filter=filter_domain.FilterType.EQUAL
     )(expected_attribute)
@@ -299,8 +299,8 @@ def test_and_group_filters() -> None:
         )
     )(filters=[filter_equal, filter_equal2])
 
-    assert definition_group_filter.to_definition() == "(test = ?) AND (test2 = ?)"
-    assert definition_group_filter.get_values() == ["'abc'", "'def'"]
+    assert definition_group_filter.to_definition() == "(test = %s) AND (test2 = %s)"
+    assert definition_group_filter.get_values() == ["abc", "def"]
 
 
 def test_or_group_filters() -> None:
@@ -324,5 +324,5 @@ def test_or_group_filters() -> None:
         )
     )(filters=[filter_equal, filter_equal2])
 
-    assert definition_group_filter.to_definition() == "(test = ?) OR (test2 = ?)"
-    assert definition_group_filter.get_values() == ["'abc'", "'def'"]
+    assert definition_group_filter.to_definition() == "(test = %s) OR (test2 = %s)"
+    assert definition_group_filter.get_values() == ["abc", "def"]

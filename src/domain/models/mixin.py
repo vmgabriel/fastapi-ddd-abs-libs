@@ -1,5 +1,5 @@
 import abc
-from typing import Any
+from typing import Any, cast
 
 from src.domain.models import filter, repository
 from src.infra.log import model as model_log
@@ -9,7 +9,7 @@ from src.infra.uow import model as model_uow
 class GetterMixin(abc.ABC):
     repository_persistence: repository.RepositoryPersistence
     logger: model_log.LogAdapter
-    filter_builder: filter.FilterBuilder
+    _filter_builder: filter.FilterBuilder
 
     _session: model_uow.Session
     _equal_id_filter: filter.FilterDefinition
@@ -19,17 +19,21 @@ class GetterMixin(abc.ABC):
         *args,
         **kwargs,
     ) -> None:
-        self.repository_persistence = kwargs.get("repository_persistence")
-        self.logger = kwargs.get("logger") or kwargs.get("log")
-        self.filter_builder = kwargs.get("filter_builder")
-        self._session = kwargs.get("session")
+        self.repository_persistence = cast(
+            repository.RepositoryPersistence, kwargs.get("repository_persistence")
+        )
+        self.logger = cast(model_log.LogAdapter | None, kwargs.get("logger")) or cast(
+            model_log.LogAdapter, kwargs.get("log")
+        )
+        self._filter_builder = cast(filter.FilterBuilder, kwargs.get("filter_builder"))
+        self._session = cast(model_uow.Session, kwargs.get("session"))
 
-        self._equal_id_filter = self.filter_builder.build(
+        self._equal_id_filter = self._filter_builder.build(
             type_filter=filter.FilterType.EQUAL
         )("id")
 
     @abc.abstractmethod
-    def serialize(self, data: Any) -> repository.Repository:
+    def serialize(self, data: Any) -> repository.RepositoryData | None:
         raise NotImplementedError()
 
     @abc.abstractmethod
@@ -49,17 +53,21 @@ class GetterListMixin(abc.ABC):
         *args,
         **kwargs,
     ) -> None:
-        self.repository_persistence = kwargs.get("repository_persistence")
-        self.logger = kwargs.get("logger") or kwargs.get("log")
-        self.filter_builder = kwargs.get("filter_builder")
-        self._session = kwargs.get("session")
+        self.repository_persistence = cast(
+            repository.RepositoryPersistence, kwargs.get("repository_persistence")
+        )
+        self.logger = cast(model_log.LogAdapter | None, kwargs.get("logger")) or cast(
+            model_log.LogAdapter, kwargs.get("log")
+        )
+        self._filter_builder = cast(filter.FilterBuilder, kwargs.get("filter_builder"))
+        self._session = cast(model_uow.Session, kwargs.get("session"))
 
     @abc.abstractmethod
     def filter(self, criteria: filter.Criteria) -> filter.Paginator:
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def serialize(self, data: Any) -> repository.Repository:
+    def serialize(self, data: Any) -> repository.RepositoryData | None:
         raise NotImplementedError()
 
 
@@ -67,6 +75,7 @@ class CreatorMixin(abc.ABC):
     repository_persistence: repository.RepositoryPersistence
 
     _session: model_uow.Session
+    _filter_builder: filter.FilterBuilder
     logger: model_log.LogAdapter
 
     def __init__(
@@ -74,10 +83,14 @@ class CreatorMixin(abc.ABC):
         *args,
         **kwargs,
     ) -> None:
-        self.repository_persistence = kwargs.get("repository_persistence")
-        self.logger = kwargs.get("logger") or kwargs.get("log")
-        self.filter_builder = kwargs.get("filter_builder")
-        self._session = kwargs.get("session")
+        self.repository_persistence = cast(
+            repository.RepositoryPersistence, kwargs.get("repository_persistence")
+        )
+        self.logger = cast(model_log.LogAdapter | None, kwargs.get("logger")) or cast(
+            model_log.LogAdapter, kwargs.get("log")
+        )
+        self._filter_builder = cast(filter.FilterBuilder, kwargs.get("filter_builder"))
+        self._session = cast(model_uow.Session, kwargs.get("session"))
 
     @abc.abstractmethod
     def create(self, new: repository.RepositoryData) -> repository.RepositoryData:
@@ -89,16 +102,21 @@ class UpdaterMixin(abc.ABC):
 
     _session: model_uow.Session
     logger: model_log.LogAdapter
+    _filter_builder: filter.FilterBuilder
 
     def __init__(
         self,
         *args,
         **kwargs,
     ) -> None:
-        self.repository_persistence = kwargs.get("repository_persistence")
-        self.logger = kwargs.get("logger") or kwargs.get("log")
-        self.filter_builder = kwargs.get("filter_builder")
-        self._session = kwargs.get("session")
+        self.repository_persistence = cast(
+            repository.RepositoryPersistence, kwargs.get("repository_persistence")
+        )
+        self.logger = cast(model_log.LogAdapter | None, kwargs.get("logger")) or cast(
+            model_log.LogAdapter, kwargs.get("log")
+        )
+        self._filter_builder = cast(filter.FilterBuilder, kwargs.get("filter_builder"))
+        self._session = cast(model_uow.Session, kwargs.get("session"))
 
     @abc.abstractmethod
     def update(
@@ -113,6 +131,7 @@ class DeleterMixin(abc.ABC):
 
     _session: model_uow.Session
     logger: model_log.LogAdapter
+    _filter_builder: filter.FilterBuilder
 
     _equal_id_filter: filter.FilterDefinition
 
@@ -121,10 +140,14 @@ class DeleterMixin(abc.ABC):
         *args,
         **kwargs,
     ) -> None:
-        self.repository_persistence = kwargs.get("repository_persistence")
-        self.logger = kwargs.get("logger") or kwargs.get("log")
-        self.filter_builder = kwargs.get("filter_builder")
-        self._session = kwargs.get("session")
+        self.repository_persistence = cast(
+            repository.RepositoryPersistence, kwargs.get("repository_persistence")
+        )
+        self.logger = cast(model_log.LogAdapter | None, kwargs.get("logger")) or cast(
+            model_log.LogAdapter, kwargs.get("log")
+        )
+        self._filter_builder = cast(filter.FilterBuilder, kwargs.get("filter_builder"))
+        self._session = cast(model_uow.Session, kwargs.get("session"))
 
         self._equal_id_filter = self.filter_builder.build(
             type_filter=filter.FilterType.EQUAL

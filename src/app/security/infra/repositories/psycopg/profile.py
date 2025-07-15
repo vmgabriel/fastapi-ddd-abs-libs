@@ -31,6 +31,5 @@ class PostgresProfileRepository(
         )
         super().__init__(*args, **kwargs)
 
-    def serialize(self, data: Any) -> "PostgresProfileRepository":
-        self._data = None
-        return self
+    def serialize(self, data: Any) -> repository.RepositoryData | None:
+        return None

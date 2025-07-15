@@ -1,7 +1,8 @@
-from typing import Any
+from typing import Any, Tuple, cast
 
-from src.app.security.domain import UserRepository
+from src.app.security import domain as security_domain
 from src.domain.models import repository
+from src.infra.filter import postgres as filter_postgres
 from src.infra.mixin import postgres
 
 
@@ -11,12 +12,13 @@ class PostgresUserRepository(
     postgres.PostgresCreatorMixin,
     postgres.PostgresUpdaterMixin,
     postgres.PostgresDeleterMixin,
-    UserRepository,
+    security_domain.UserRepository,
 ):
     def __init__(self, *args, **kwargs) -> None:
+        self.table_name = "tbl_user"
         kwargs["repository_persistence"] = kwargs["persistency"] = (
             repository.RepositoryPersistence(
-                table_name="tbl_user",
+                table_name=self.table_name,
                 fields=[
                     "id",
                     "name",
@@ -34,6 +36,41 @@ class PostgresUserRepository(
         )
         super().__init__(*args, **kwargs)
 
-    def serialize(self, data: Any) -> "PostgresUserRepository":
-        self._data = None
-        return self
+    def by_username(self, username: str) -> security_domain.UserData | None:
+        script = "SELECT * FROM {table} WHERE {filters};"
+        _IS_USERNAME_FILTER = filter_postgres.EqualPostgresDefinitionFilter("username")
+        used_filter = _IS_USERNAME_FILTER(username)
+
+        complete_script = script.format(
+            table=self.table_name, filters=used_filter.to_definition()
+        )
+        res = self._session.atomic_execute(
+            complete_script,
+            (
+                (cast(str, used_filter.get_values()),)
+                if isinstance(used_filter.get_values(), str)
+                else cast(Tuple[str, ...], used_filter.get_values())
+            ),
+        )
+
+        found = getattr(res, "fetchone", lambda: None)()
+
+        if not found:
+            return None
+
+        return self.serialize(found)
+
+    def serialize(self, data: Any) -> security_domain.UserData | None:
+        return security_domain.UserData(
+            id=data[0],
+            name=data[1],
+            last_name=data[2],
+            username=data[3],
+            email=data[4],
+            is_activated=data[5],
+            created_at=data[6],
+            updated_at=data[7],
+            deleted_at=data[8],
+            permissions=list(data[9]),
+            password=data[10],
+        )

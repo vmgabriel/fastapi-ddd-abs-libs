@@ -24,12 +24,12 @@ class DescPostgresOrder(filter.Ordered):
 class EqualPostgresDefinitionFilter(filter.FilterDefinition):
 
     def to_definition(self) -> str:
-        return "{attr} = ?".format(attr=self.attribute)
+        return "{attr} = %s".format(attr=self.attribute)
 
     def get_values(self, value: Any) -> str | List[str]:
         response = ""
         if isinstance(value, str):
-            response = f"'{value}'"
+            response = value
         elif isinstance(value, bool):
             response = "true" if value else "false"
         elif isinstance(value, (int, float)):

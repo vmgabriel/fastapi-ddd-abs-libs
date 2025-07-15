@@ -31,6 +31,7 @@ class EntrypointHttp(model.EntrypointModel):
     name: str
     status_code: int
     method: model.HttpStatusType
+    path_parameters: List[str] = pydantic.Field(default_factory=lambda: list())
 
     documentation: EntrypointHttpDocumentation
 
@@ -41,12 +42,17 @@ class EntrypointHttp(model.EntrypointModel):
         documentation: EntrypointHttpDocumentation,
         status_code: int = 200,
         method: model.HttpStatusType = model.HttpStatusType.GET,
+        path_parameters: list | None = None,
         *args,
         **kwargs,
     ):
         super().__init__(*args, **kwargs)
+        if path_parameters is None:
+            path_parameters = list()
+
         self.route = route
         self.name = name
         self.status_code = status_code
         self.method = method
         self.documentation = documentation
+        self.path_parameters = path_parameters

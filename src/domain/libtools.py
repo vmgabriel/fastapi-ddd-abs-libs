@@ -12,7 +12,7 @@ from src.infra.migrator import model as migrator_model
 
 class ParameterVariable(pydantic.BaseModel):
     name: str
-    type: Type
+    type: Type[Any]
     default: Any
     required: bool
     description: str | None
@@ -62,7 +62,7 @@ def get_parameters_request(
         parameters.append(
             ParameterVariable(
                 name=field_name,
-                type=field.annotation,
+                type=cast(Type[Any], field.annotation),
                 description=field.description,
                 default=field.default,
                 required=field.is_required(),
@@ -71,5 +71,16 @@ def get_parameters_request(
     return parameters
 
 
-def encrypt_password(password: str) -> str:
-    return bcrypt.hashpw(str.encode(password), bcrypt.gensalt()).decode("utf-8")
+def encrypt_password(password: pydantic.SecretStr) -> str:
+    return bcrypt.hashpw(
+        str.encode(password.get_secret_value()), bcrypt.gensalt()
+    ).decode("utf-8")
+
+
+def check_password(
+    password: pydantic.SecretStr, hashed_password: pydantic.SecretStr
+) -> bool:
+    return bcrypt.checkpw(
+        str.encode(password.get_secret_value()),
+        str.encode(hashed_password.get_secret_value()),
+    )
