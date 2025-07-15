@@ -9,6 +9,7 @@ entrypoints: Dict[str, List[entrypoint_model.EntrypointModel]] = {
     "http": [
         http_security.GetDataEntrypointHttp(),
         http_security.AuthenticateEntrypointHttp(),
+        http_security.RefreshTokenEntrypointHttp(),
     ],
 }
 

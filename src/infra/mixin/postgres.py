@@ -1,7 +1,8 @@
 import abc
-from typing import Generator, Iterable, List, cast
+from typing import Generator, Iterable, List, Tuple, cast
 
 from src.domain.models import filter, mixin, repository
+from src.domain.models.repository import RepositoryData
 
 _SELECT_DEFAULT = "SELECT * FROM {} WHERE {};"
 _SELECT_COUNT_DEFAULT = "SELECT COUNT(*) FROM {};"
@@ -31,7 +32,11 @@ class PostgresGetterMixin(mixin.GetterMixin, abc.ABC):
                 self.repository_persistence.table_name,
                 id_filter_declaration.to_definition(),
             ),
-            params=tuple(id_filter_declaration.get_values()),
+            params=(
+                (cast(str, id_filter_declaration.get_values()),)
+                if isinstance(id_filter_declaration.get_values(), str)
+                else cast(Tuple[str, ...], id_filter_declaration.get_values())
+            ),
         )
         found = getattr(response, "fetchone", lambda: None)()
         if not found:
@@ -39,7 +44,7 @@ class PostgresGetterMixin(mixin.GetterMixin, abc.ABC):
                 f"Get_by_id - {self.repository_persistence.table_name} "
                 f"not found record with id {id}"
             )
-        return self.serialize(found)
+        return cast(RepositoryData, self.serialize(found))
 
 
 class PostgresGetterListMixin(mixin.GetterListMixin, abc.ABC):
@@ -74,7 +79,7 @@ class PostgresGetterListMixin(mixin.GetterListMixin, abc.ABC):
             page=criteria.page_number,
             count=criteria.page_quantity,
             elements=[
-                self.serialize(record)
+                cast(RepositoryData, self.serialize(record))
                 for record in getattr(response, "fetchall", lambda: [])()
             ],
         )

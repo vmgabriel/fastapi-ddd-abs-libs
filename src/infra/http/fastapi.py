@@ -1,10 +1,12 @@
 import itertools
-from typing import Any, Callable, Dict, Optional, TypeVar, cast
+import traceback
+from typing import Any, Callable, Dict, TypeVar, cast
 
 import fastapi
 
 from src.domain.entrypoint import http as domain_http
 from src.domain.entrypoint import model as model_http
+from src.domain.models import exceptions as model_exceptions
 from src.domain.services import command
 from src.infra.jwt import model as jwt_model
 
@@ -12,7 +14,6 @@ from . import model
 
 T = TypeVar("T", bound=command.Command)
 V = TypeVar("V", bound=command.CommandRequest)
-X = Optional[str]
 oauth2_scheme = fastapi.security.APIKeyHeader(name="Authorization")
 
 
@@ -89,19 +90,55 @@ class FastApiAdapter(model.HttpModel):
 
             cmd = cast(command.Command, route.cmd)
 
-            cmd.inject_parameters(
-                {
-                    parameter: kwargs.get(parameter, "")
-                    for parameter in route.path_parameters
-                }
-            )
+            parameters = {
+                parameter: kwargs.get(parameter, "")
+                for parameter in route.path_parameters
+            }
+            cmd.inject_parameters(parameters)
+            request_data: command.CommandRequest | None = None
             if is_get:
                 request_data = command.CommandRequest()
-                cmd.inject_request(request_data)
             else:
-                cmd.inject_request(kwargs.get("payload", ...))
+                request_data = cast(command.CommandRequest, kwargs.get("payload", ...))
+            cmd.inject_request(request_data)
 
-            return await cmd.execute()
+            try:
+                return await cmd.execute()
+            except ValueError as exc:
+                return command.CommandResponse(
+                    trace_id=request_data.trace_id,
+                    errors=[{"message": str(exc), "type": exc.__class__.__name__}],
+                    payload={},
+                )
+            except model_exceptions.CustomException as exc:
+                return command.CommandResponse(
+                    trace_id=request_data.trace_id,
+                    errors=[exc.to_dict()],
+                )
+            except Exception as exc:
+                self.logger.error(
+                    f"[{request_data.trace_id}][Error] {route.name} - {exc}"
+                )
+
+                self.logger.error(
+                    (
+                        f"[{request_data.trace_id}][Error][Input] - path_params: "
+                        f"[{parameters}] - request: {request_data}"
+                    )
+                )
+
+                self.logger.error(
+                    f"[{request_data.trace_id}][Error] - {traceback.format_exc()}"
+                )
+                return command.CommandResponse(
+                    trace_id=request_data.trace_id,
+                    errors=[
+                        {
+                            "message": "Internal Server Error",
+                            "type": "InternalServerError",
+                        }
+                    ],
+                )
 
         namespace = locals()
         parameters = {parameter: "str" for parameter in route.path_parameters}

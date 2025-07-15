@@ -56,3 +56,20 @@ class EntrypointHttp(model.EntrypointModel):
         self.method = method
         self.documentation = documentation
         self.path_parameters = path_parameters
+
+
+# Default Entrypoint Documentation
+
+
+class VersionNotFoundEntrypointDocumentationHttp(ExampleEntrypointDocumentationHttp):
+    def __init__(self):
+        super().__init__(
+            status_code=200,
+            description="Error with version data",
+            example_name="Error with Version",
+            content={
+                "trace_id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+                "payload": {},
+                "errors": [{"message": "Version not found", "type": "ValueError"}],
+            },
+        )

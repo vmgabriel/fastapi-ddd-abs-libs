@@ -181,3 +181,57 @@ class AuthenticateCommand(command.Command):
             trace_id=getattr(current_request, "trace_id", uuid.uuid4()),
             payload=authentication_response.model_dump(),
         )
+
+
+# Refresh Token
+
+
+class RefreshAuthenticateCommandData(command.CommandRequest):
+    refresh_token: str
+
+
+class RefreshAuthenticateCommand(command.Command):
+    logger: log_model.LogAdapter
+    repository_getter: repository_model.RepositoryGetter
+    uow: UOW
+    jwt: jwt_model.AuthJWT
+
+    def __init__(self):
+        super().__init__(
+            requirements=["logger", "uow", "jwt", "repository_getter"],
+            request_type=RefreshAuthenticateCommandData,
+        )
+
+    async def execute(self) -> command.CommandResponse:
+        self.logger = self._deps["logger"]
+        self.uow = self._deps["uow"]
+        self.jwt = self._deps["jwt"]
+        self.repository_getter = self._deps["repository_getter"]
+
+        if self.parameters.get("version") != "v1":
+            raise ValueError("Version not found")
+
+        if not self.request:
+            raise ValueError("Request not found")
+
+        current_request = cast(RefreshAuthenticateCommandData, self.request)
+
+        with self.uow.session() as session:
+            repository_user = cast(
+                domain_security.UserRepository,
+                self.repository_getter(
+                    repository=domain_security.UserRepository,
+                    session=session,
+                ),
+            )
+            authentication_response = authenticate_service.refresh_token(
+                jwt=self.jwt,
+                logger=self.logger,
+                user_repository=repository_user,
+                refresh_token=current_request.refresh_token,
+            )
+
+        return command.CommandResponse(
+            trace_id=getattr(current_request, "trace_id", uuid.uuid4()),
+            payload=authentication_response.model_dump(),
+        )

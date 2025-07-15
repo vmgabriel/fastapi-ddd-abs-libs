@@ -30,7 +30,7 @@ With DDD recreate a API with Abstract Libraries, you can apply other libraries t
     - [x] Organize Code - PENDING
 - [ ] Integration for Profile
     - [X] Challenge for Path Params - Query Params and Payload
-    - [ ] Entrypoint for Generate Token
-    - [ ] Entrypoint for Refresh Token
+    - [X] Entrypoint for Generate Token
+    - [X] Entrypoint for Refresh Token
     - [ ] Entrypoint for Create Client
     - [ ] Entrypoint for Get Profile of Client
