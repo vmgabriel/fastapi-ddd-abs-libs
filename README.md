@@ -12,7 +12,7 @@ v0.2.0
 
 - [ ] Do Todo
     - [X] Add App With Domain Layer
-    - [ ] Add Properties attribute for Board
+    - [X] Add Properties attribute for Board
     - [ ] Add Service Layer
     - [ ] Migrate new Table for Task
     - [ ] Migrate new Table for History
