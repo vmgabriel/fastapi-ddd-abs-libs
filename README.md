@@ -4,33 +4,21 @@ With DDD recreate a API with Abstract Libraries, you can apply other libraries t
 
 ## CheckList
 
-- [x] Configure each thing in infra related to configure and use that implementation
-- [x] Security Integration
-- [x] Integration in Infra with DB
-    - [x] Use UOW pattern
-    - [x] Add Layer for Migrations
-    - [x] Use Repository Pattern
-    - [x] Use Mixin Pattern
-    - [x] Inject that implementation
-    - [x] Add base rules for Criteria Pattern
-    - [x] Add CRUD Repository
-    - [x] Implement CRUD in a Repository using Builder
-    - [x] Inject Builder Execute Migrations Base
-    - [x] Execute Migrations
-- [x] Entrypoint HealthCheck
-- [x] Integration of App Domain
-    - [x] Integrate Entrypoints
-    - [x] Integrate Repositories
-- [X] Integration CLI
-    - [X] Add Infra CLI Library
-    - [X] Create Entrypoint CLI
-    - [X] Create CLI for Generate Client
-    - [X] Add in Domain
-    - [X] Create First Super User
-    - [x] Organize Code - PENDING
-- [ ] Integration for Profile
-    - [X] Challenge for Path Params - Query Params and Payload
-    - [X] Entrypoint for Generate Token
-    - [X] Entrypoint for Refresh Token
-    - [X] Entrypoint for Create Client
-    - [X] Entrypoint for Get Profile of Client
+v0.1.0
+
+- Check Tag v0.1.0
+
+v0.2.0
+
+- [ ] Do Todo
+    - [X] Add App With Domain Layer
+    - [ ] Add Service Layer
+    - [ ] Migrate new Table for Task
+    - [ ] Migrate new Table for History
+    - [ ] Migrate new Table for Desk
+    - [ ] Add Repository
+    - [ ] Add Command
+    - [ ] CRUD Check of Integration Massive of All Rules
+    - [ ] Add Checkpoints CRUDS for Task Table
+    - [ ] Check List of Tasks - **Require a Validation**
+    - [ ] Check Rules
