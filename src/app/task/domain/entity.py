@@ -27,6 +27,7 @@ class Task(pydantic.BaseModel):
     id: str
     name: str
     description: str
+    owner: str
     histories: list[TaskHistory] = pydantic.Field(default_factory=list)
     status: TaskStatus = TaskStatus.TODO
     icon_url: str | None = None
@@ -36,13 +37,14 @@ class Task(pydantic.BaseModel):
 
     @staticmethod
     def create(
-        id: str, name: str, description: str, icon_url: str | None = None
+        id: str, name: str, description: str, owner: str, icon_url: str | None = None
     ) -> "Task":
         return Task(
             id=id,
             name=name,
             description=description,
             icon_url=icon_url,
+            owner=owner,
             histories=[
                 TaskHistory(
                     id=str(uuid.uuid4()),
@@ -53,6 +55,7 @@ class Task(pydantic.BaseModel):
                         "name": name,
                         "description": description,
                         "icon_url": icon_url,
+                        "owner": owner,
                     },
                     changed_at=datetime.datetime.now(),
                 )
@@ -111,6 +114,26 @@ class Task(pydantic.BaseModel):
         for key, value in current_values.items():
             setattr(self, key, value)
 
+    def change_owner(self, owner: str) -> None:
+        if owner is self.owner:
+            return
+
+        self.histories.append(
+            TaskHistory(
+                id=str(uuid.uuid4()),
+                task_id=self.id,
+                type_of_change=domain_entity.HistoryChangeType.UPDATED,
+                changed_at=datetime.datetime.now(),
+                previous_values={
+                    "owner": self.owner,
+                },
+                new_values={
+                    "owner": owner,
+                },
+            )
+        )
+        self.owner = owner
+
 
 class Board(pydantic.BaseModel):
     id: str
@@ -118,10 +141,11 @@ class Board(pydantic.BaseModel):
     description: str
     icon_url: str | None = None
     tasks: list[Task] = pydantic.Field(default_factory=list)
+    owners: list[str] = pydantic.Field(default_factory=list)
 
     @staticmethod
     def create(
-        id: str, name: str, description: str, icon_url: str | None = None
+        id: str, name: str, description: str, user_id: str, icon_url: str | None = None
     ) -> "Board":
         return Board(
             id=id,
@@ -129,7 +153,14 @@ class Board(pydantic.BaseModel):
             description=description,
             icon_url=icon_url,
             tasks=[],
+            owners=[user_id],
         )
 
     def add_task(self, task: Task) -> None:
         self.tasks.append(task)
+
+    def add_owner(self, user_id: str) -> None:
+        self.owners.append(user_id)
+
+    def remove_owner(self, user_id: str) -> None:
+        self.owners.remove(user_id)
