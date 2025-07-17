@@ -34,6 +34,10 @@ class ProfileRepository(
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
 
+    @abc.abstractmethod
+    def by_user_id(self, user_id: str) -> ProfileData | None:
+        raise NotImplementedError()
+
 
 class UserRepository(
     repository.Repository,

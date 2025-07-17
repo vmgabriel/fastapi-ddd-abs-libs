@@ -37,7 +37,7 @@ class GetterMixin(abc.ABC):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def get_by_id(self, id: str):
+    def get_by_id(self, id: str) -> repository.RepositoryData | None:
         raise NotImplementedError()
 
 

@@ -71,6 +71,6 @@ class PostgresUserRepository(
             created_at=data[6],
             updated_at=data[7],
             deleted_at=data[8],
-            permissions=list(data[9]),
+            permissions=cast(str, data[9]).split(","),
             password=data[10],
         )

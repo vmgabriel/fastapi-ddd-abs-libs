@@ -17,8 +17,6 @@ class JWTData(pydantic.BaseModel):
     exp: datetime.datetime
 
     def has_permission(self, audiences: List[str]) -> bool:
-        print("audiences", audiences)
-        print("aud", self.aud)
         role = list(filter(lambda aud: aud.startswith("role:"), self.aud))[0]
         all_audiences_with_role = user.ROLE_PERMISSIONS[user.Role(role)]
         current_user_audiences = [

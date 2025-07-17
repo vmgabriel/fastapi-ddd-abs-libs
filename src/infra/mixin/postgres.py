@@ -1,6 +1,6 @@
 import abc
 import functools
-from typing import Generator, Iterable, List, Tuple, cast
+from typing import Any, Generator, Iterable, List, Tuple, cast
 
 import pydantic
 
@@ -96,16 +96,19 @@ class PostgresCreatorMixin(mixin.CreatorMixin):
             ",".join(["%s" for _ in self.repository_persistence.fields]),
         )
 
+        def convertion_fields(field: Any) -> str:
+            if isinstance(field, pydantic.SecretStr):
+                return field.get_secret_value()
+            if isinstance(field, list):
+                return ",".join(field)
+            return field
+
         get_fields = (
             getattr(new, field) for field in self.repository_persistence.fields
         )
         fields_to_attr = functools.partial(
             map,
-            lambda field: (
-                field.get_secret_value()
-                if isinstance(field, pydantic.SecretStr)
-                else field
-            ),
+            convertion_fields,
         )
 
         fields = tuple(fields_to_attr(get_fields))

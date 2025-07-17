@@ -1,6 +1,6 @@
 import itertools
 import traceback
-from typing import Any, Callable, Dict, TypeVar, cast
+from typing import Annotated, Any, Callable, Dict, TypeVar, cast
 
 import fastapi
 
@@ -14,6 +14,7 @@ from . import model
 
 T = TypeVar("T", bound=command.Command)
 V = TypeVar("V", bound=command.CommandRequest)
+X = Annotated[command.CommandRequest, fastapi.Query()]
 oauth2_scheme = fastapi.security.APIKeyHeader(name="Authorization")
 
 
@@ -80,10 +81,10 @@ class FastApiAdapter(model.HttpModel):
         with_token = route.security.require_security
 
         async def endpoint_base(**kwargs: Any) -> command.CommandResponse:
+            status_authentication = None
             if with_token:
-                token = fastapi.Depends(oauth2_scheme)
                 status_authentication = self.check_authentication(
-                    token=cast(str, token), route=route
+                    token=cast(str, kwargs.get("token", "")), route=route
                 )
                 if status_authentication.status is not model_http.StatusType.OK:
                     self._status_error_response(status_authentication)
@@ -93,7 +94,14 @@ class FastApiAdapter(model.HttpModel):
             parameters = {
                 parameter: kwargs.get(parameter, "")
                 for parameter in route.path_parameters
+                if parameter != "user"
             }
+            if with_token and "user" in route.path_parameters and status_authentication:
+                parameters["user"] = getattr(
+                    cast(jwt_model.JWTData, status_authentication.data) or ...,
+                    "user.id",
+                    "",
+                )
             cmd.inject_parameters(parameters)
             request_data: command.CommandRequest | None = None
             if is_get:
@@ -141,25 +149,39 @@ class FastApiAdapter(model.HttpModel):
                 )
 
         namespace = locals()
-        parameters = {parameter: "str" for parameter in route.path_parameters}
-        if with_token:
-            parameters.update({"token": "fastapi.Depends(oauth2_scheme)"})
+        parameters: Dict[str, str | tuple[str, str]] = {
+            parameter: "str"
+            for parameter in route.path_parameters
+            if "user" != parameter
+        }
         if is_get:
-            parameters.update({"q": "command.CommandRequest | None"})
             namespace["command"] = command
+            namespace["Query"] = fastapi.Query
+            namespace["Annotated"] = Annotated
+            parameters.update({"q": "Annotated[command.CommandRequest, Query()]"})
         else:
             parameters.update({"payload": route.cmd.request_type.__name__})
+        if with_token:
+            namespace["fastapi"] = fastapi
+            namespace["oauth2_scheme"] = oauth2_scheme
+            parameters.update({"token": ("str", "fastapi.Depends(oauth2_scheme)")})
 
         def create_dynamic_function() -> str:
-            str_parameters = ",".join(
-                f"{name}: {type_}" for name, type_ in parameters.items()
-            )
-            return_str_parameters = ",".join(
-                f"{name}={name}" for name, _ in parameters.items()
-            )
+            parameters_to_str = []
+            return_str_parameters = []
+            for parameter, type_ in parameters.items():
+                current_type = ""
+                equal_type = ""
+                if isinstance(type_, tuple):
+                    current_type = type_[0]
+                    equal_type = " = " + type_[1]
+                else:
+                    current_type = type_
+                parameters_to_str.append(f"{parameter}: {current_type}{equal_type}")
+                return_str_parameters.append(f"{parameter}={parameter}")
             return call_function_str.format(
-                str_parameters=str_parameters,
-                return_str_parameters=return_str_parameters,
+                str_parameters=",".join(parameters_to_str),
+                return_str_parameters=",".join(return_str_parameters),
             )
 
         namespace[route.cmd.request_type.__name__] = route.cmd.request_type

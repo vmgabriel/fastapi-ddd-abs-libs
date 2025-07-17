@@ -42,7 +42,7 @@ class EntrypointHttp(model.EntrypointModel):
         documentation: EntrypointHttpDocumentation,
         status_code: int = 200,
         method: model.HttpStatusType = model.HttpStatusType.GET,
-        path_parameters: list | None = None,
+        path_parameters: list[str] | None = None,
         *args,
         **kwargs,
     ):

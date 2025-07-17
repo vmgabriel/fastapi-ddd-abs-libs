@@ -52,7 +52,7 @@ def _find_user_by_id(
     user_repository: domain_security.UserRepository,
 ) -> domain_security.UserData | None:
     try:
-        return user_repository.get_by_id(id=id)
+        return cast(domain_security.UserData | None, user_repository.get_by_id(id=id))
     except repository_model.RepositoryNotFoundError:
         return None
 
@@ -81,7 +81,15 @@ def authenticate(
         username=user_data.username,
     )
 
-    encoded = jwt.encode(current_user=auth_user, aud=user_data.permissions)
+    print(f"permissions {user_data}")
+    encoded = jwt.encode(
+        current_user=auth_user,
+        aud=(
+            [user_data.permissions]
+            if isinstance(user_data.permissions, str)
+            else user_data.permissions
+        ),
+    )
 
     return AuthenticationResponse(
         status=True,
@@ -119,7 +127,15 @@ def refresh_token(
         username=user_data.username,
     )
 
-    encoded = jwt.encode(current_user=user_auth, aud=user_data.permissions)
+    print(f"permissions {user_data.permissions}")
+    encoded = jwt.encode(
+        current_user=user_auth,
+        aud=(
+            [user_data.permissions]
+            if isinstance(user_data.permissions, str)
+            else user_data.permissions
+        ),
+    )
 
     return AuthenticationResponse(
         status=True,

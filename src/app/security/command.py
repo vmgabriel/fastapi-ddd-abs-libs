@@ -115,7 +115,11 @@ class CreateSuperUserCommand(command.Command):
             )
 
             new_repository_user = repository_user.create(
-                new=current_request.to_repository_user(["role:admin"])
+                new=current_request.to_repository_user(
+                    [
+                        "role:admin",
+                    ]
+                )
             )
 
             repository_profile.create(
@@ -294,7 +298,11 @@ class CreateBasicUserCommand(command.Command):
             )
 
             new_repository_user = repository_user.create(
-                new=current_request.to_repository_user(["role:client"])
+                new=current_request.to_repository_user(
+                    [
+                        "role:client",
+                    ]
+                )
             )
 
             new_repository_profile = repository_profile.create(
@@ -312,4 +320,93 @@ class CreateBasicUserCommand(command.Command):
         return command.CommandResponse(
             trace_id=getattr(self.request, "trace_id", uuid.uuid4()),
             payload=response.model_dump(),
+        )
+
+
+# Get Profile
+
+
+class GetProfileCommandData(command.CommandRequest): ...  # noqa: E701
+
+
+class GetProfileResponse(pydantic.BaseModel):
+    id: str
+    name: str
+    last_name: str
+    username: str
+    email: str
+    phone: str | None
+    icon_url: str | None
+
+
+class GetProfileCommand(command.Command):
+    logger: log_model.LogAdapter
+    repository_getter: repository_model.RepositoryGetter
+    uow: UOW
+
+    def __init__(self):
+        super().__init__(
+            requirements=["logger", "uow", "repository_getter"],
+            request_type=GetProfileCommandData,
+        )
+
+    async def execute(self) -> command.CommandResponse:
+        self.logger = self._deps["logger"]
+        self.uow = self._deps["uow"]
+        self.repository_getter = self._deps["repository_getter"]
+
+        user_id = self.parameters.get("user")
+
+        if not user_id:
+            raise ValueError("User not found")
+
+        if self.parameters.get("version") != "v1":
+            raise ValueError("Version not found")
+
+        if not self.request:
+            raise ValueError("Request not found")
+
+        with self.uow.session() as session:
+            repository_user = cast(
+                domain_security.UserRepository,
+                self.repository_getter(
+                    repository=domain_security.UserRepository,
+                    session=session,
+                ),
+            )
+
+            repository_profile = cast(
+                domain_security.ProfileRepository,
+                self.repository_getter(
+                    repository=domain_security.ProfileRepository,
+                    session=session,
+                ),
+            )
+
+            user_data = cast(
+                domain_security.UserData | None, repository_user.get_by_id(id=user_id)
+            )
+            profile_data = cast(
+                domain_security.ProfileData | None,
+                repository_profile.by_user_id(user_id=user_id),
+            )
+
+            if not user_data:
+                raise repository_model.RepositoryNotFoundError("User not found")
+            if not profile_data:
+                raise repository_model.RepositoryNotFoundError("Profile not found")
+
+            profile_data_response = GetProfileResponse(
+                id=profile_data.id,
+                name=user_data.name,
+                last_name=user_data.last_name,
+                username=user_data.username,
+                email=user_data.email,
+                phone=profile_data.phone,
+                icon_url=profile_data.icon_url,
+            )
+
+        return command.CommandResponse(
+            trace_id=getattr(self.request, "trace_id", uuid.uuid4()),
+            payload=profile_data_response.model_dump(),
         )
