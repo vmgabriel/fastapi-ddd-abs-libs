@@ -33,4 +33,4 @@ With DDD recreate a API with Abstract Libraries, you can apply other libraries t
     - [X] Entrypoint for Generate Token
     - [X] Entrypoint for Refresh Token
     - [X] Entrypoint for Create Client
-    - [ ] Entrypoint for Get Profile of Client
+    - [X] Entrypoint for Get Profile of Client
