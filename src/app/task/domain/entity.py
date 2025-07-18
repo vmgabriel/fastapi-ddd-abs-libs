@@ -6,6 +6,7 @@ from typing import Dict
 import pydantic
 
 from src.domain.models import entity as domain_entity
+from src.domain.models import repository as domain_repository
 
 
 class TaskStatus(enum.StrEnum):
@@ -14,8 +15,7 @@ class TaskStatus(enum.StrEnum):
     DONE = enum.auto()
 
 
-class TaskHistory(pydantic.BaseModel):
-    id: str
+class TaskHistory(domain_repository.RepositoryData):
     task_id: str
     changed_at: datetime.datetime
     type_of_change: domain_entity.HistoryChangeType
@@ -23,8 +23,7 @@ class TaskHistory(pydantic.BaseModel):
     new_values: Dict[str, str | None] | None = None
 
 
-class Task(pydantic.BaseModel):
-    id: str
+class Task(domain_repository.RepositoryData):
     name: str
     description: str
     owner: str
@@ -135,8 +134,7 @@ class Task(pydantic.BaseModel):
         self.owner = owner
 
 
-class Board(pydantic.BaseModel):
-    id: str
+class Board(domain_repository.RepositoryData):
     name: str
     description: str
     icon_url: str | None = None

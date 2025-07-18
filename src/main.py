@@ -4,6 +4,7 @@ from typing import Any, Dict, List
 from src import settings
 from src.app import security as security_app
 from src.app import shared as shared_app
+from src.app import task as task_app
 
 # domain - apps
 from src.app.shared import scripts as shared_scripts
@@ -28,6 +29,7 @@ log = getLogger(__name__)
 apps: List[domain.DomainFactory] = [
     security_app.domain_security,
     shared_app.domain_shared,
+    task_app.domain_task,
 ]
 
 

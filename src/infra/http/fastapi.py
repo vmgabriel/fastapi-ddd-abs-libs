@@ -97,11 +97,9 @@ class FastApiAdapter(model.HttpModel):
                 if parameter != "user"
             }
             if with_token and "user" in route.path_parameters and status_authentication:
-                parameters["user"] = getattr(
-                    cast(jwt_model.JWTData, status_authentication.data) or ...,
-                    "user.id",
-                    "",
-                )
+                print(f"status_authentication.data - {status_authentication.data}")
+                data = cast(jwt_model.JWTData, status_authentication.data)
+                parameters["user"] = data.user.id
             cmd.inject_parameters(parameters)
             request_data: command.CommandRequest | None = None
             if is_get:

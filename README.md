@@ -14,10 +14,10 @@ v0.2.0
     - [X] Add App With Domain Layer
     - [X] Add Properties attribute for Board
     - [ ] Add Service Layer
-    - [ ] Migrate new Table for Task
-    - [ ] Migrate new Table for History
-    - [ ] Migrate new Table for Desk
-    - [ ] Add Repository
+    - [X] Migrate new Table for Task
+    - [X] Migrate new Table for History
+    - [X] Migrate new Table for Desk
+    - [X] Add Repository
     - [ ] Add Command
     - [ ] CRUD Check of Integration Massive of All Rules
     - [ ] Add Checkpoints CRUDS for Task Table
