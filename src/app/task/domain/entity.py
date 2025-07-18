@@ -141,6 +141,9 @@ class Board(domain_repository.RepositoryData):
     tasks: list[Task] = pydantic.Field(default_factory=list)
     owners: list[str] = pydantic.Field(default_factory=list)
 
+    def is_owner(self, user_id: str) -> bool:
+        return user_id in self.owners
+
     @staticmethod
     def create(
         id: str, name: str, description: str, user_id: str, icon_url: str | None = None

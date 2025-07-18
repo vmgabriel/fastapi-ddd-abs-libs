@@ -1,8 +1,8 @@
-from typing import Any
+from typing import Any, List, cast
 
 from src.app.task.domain import entity as entity_domain
 from src.app.task.domain import repository as domain_repository
-from src.domain.models import repository
+from src.domain.models import filter, repository
 from src.infra.mixin import postgres
 
 
@@ -70,6 +70,60 @@ class PostgresOwnerShipBoardRepository(
         )
         super().__init__(*args, **kwargs)
 
+    def get_by_user_id_and_board_id(
+        self, user_id: str, board_id: str
+    ) -> domain_repository.OwnerShipRepositoryData | None:
+        filter_builder_eq = self._filter_builder.build(
+            type_filter=filter.FilterType.EQUAL
+        )
+        order_filter_builder_asc = self._filter_builder.build_order(
+            type_order=filter.OrderType.ASC
+        )
+
+        criteria_filter = filter.Criteria(
+            filters=[
+                filter_builder_eq("user_id")(user_id),
+                filter_builder_eq("board_id")(board_id),
+            ],
+            page_number=1,
+            page_quantity=1,
+            order_by=[order_filter_builder_asc("id")],
+        )
+
+        response_filter = self.filter(criteria=criteria_filter)
+
+        if response_filter.total == 0:
+            return None
+
+        return cast(
+            domain_repository.OwnerShipRepositoryData, response_filter.elements[0]
+        )
+
+    def get_by_board_id(
+        self, board_id: str
+    ) -> List[domain_repository.OwnerShipRepositoryData]:
+        filter_builder_eq = self._filter_builder.build(
+            type_filter=filter.FilterType.EQUAL
+        )
+        order_filter_builder_asc = self._filter_builder.build_order(
+            type_order=filter.OrderType.ASC
+        )
+
+        criteria_filter = filter.Criteria(
+            filters=[
+                filter_builder_eq("board_id")(board_id),
+            ],
+            page_number=1,
+            page_quantity=200,
+            order_by=[order_filter_builder_asc("id")],
+        )
+
+        response_filter = self.filter(criteria=criteria_filter)
+
+        return cast(
+            List[domain_repository.OwnerShipRepositoryData], response_filter.elements
+        )
+
     def serialize(self, data: Any) -> domain_repository.OwnerShipRepositoryData | None:
         if not data:
             return None
@@ -77,8 +131,8 @@ class PostgresOwnerShipBoardRepository(
             id=data[0],
             board_id=data[1],
             user_id=data[2],
-            created_at=data[3],
-            updated_at=data[4],
-            deleted_at=data[5],
-            is_activated=data[6],
+            is_activated=data[3],
+            created_at=data[4],
+            updated_at=data[5],
+            deleted_at=data[6],
         )

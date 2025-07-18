@@ -86,11 +86,10 @@ class AuthPyJWT(model.AuthJWT):
             status = False
             message = "Not valid token, expired signature"
             type = entrypoint_model.StatusType.EXPIRED
-        except jwt.exceptions.DecodeError as exc:
+        except jwt.exceptions.DecodeError:
             status = False
             message = "Not Complete Information in Token"
             type = entrypoint_model.StatusType.NOT_COMPLETE
-            print("Exception ", exc)
         except Exception as exc:
             # General Error
             self.logger.error(f"JWT Error - {exc}")
@@ -123,7 +122,7 @@ class AuthPyJWT(model.AuthJWT):
             message = "Not valid token, expired signature"
             type = entrypoint_model.StatusType.EXPIRED
         except jwt.exceptions.DecodeError as exc:
-            print(f"exc {exc}")
+            self.logger.error(f"exc {exc}")
             status = False
             message = "Not Complete Information in Token"
             type = entrypoint_model.StatusType.NOT_COMPLETE

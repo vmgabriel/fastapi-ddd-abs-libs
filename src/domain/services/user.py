@@ -17,7 +17,8 @@ class Audience(enum.StrEnum):
     UPDATE_TASK = "task:update"
     DELETE_TASK = "task:delete"
     CREATE_BOARD = "board:create"
-    GET_BOARDS = "board:get"
+    GET_BOARDS = "board:gets"
+    GET_BOARD = "board:get"
     UPDATE_BOARD = "board:update"
     DELETE_BOARD = "board:delete"
     CREATE_PROFILE = "profile:create"
@@ -37,12 +38,14 @@ ROLE_PERMISSIONS: Dict[Role, List[Audience]] = {
         Audience.GET_PROFILE,
         Audience.UPDATE_PROFILE,
         Audience.CREATE_BOARD,
+        Audience.GET_BOARD,
     ],
     Role.CLIENT: [
         # Current Profile
         Audience.GET_PROFILE,
         Audience.UPDATE_PROFILE,
         Audience.CREATE_BOARD,
+        Audience.GET_BOARD,
     ],
 }
 

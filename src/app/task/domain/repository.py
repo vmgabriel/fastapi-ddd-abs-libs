@@ -1,4 +1,5 @@
 import abc
+from typing import List
 
 from src.domain.models import mixin, repository
 
@@ -58,3 +59,13 @@ class OwnerShipBoardRepository(
 ):
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
+
+    @abc.abstractmethod
+    def get_by_user_id_and_board_id(
+        self, user_id: str, board_id: str
+    ) -> OwnerShipRepositoryData | None:
+        raise NotImplementedError()
+
+    @abc.abstractmethod
+    def get_by_board_id(self, board_id: str) -> List[OwnerShipRepositoryData]:
+        raise NotImplementedError()

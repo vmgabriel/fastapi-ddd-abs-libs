@@ -63,7 +63,7 @@ class PsycopgMigrationHandler(model.MigratorHandler):
     def _migrate(
         self, to_migrate: model.MigrateHandler, session: log_uow.Session
     ) -> None:
-        print(f"up {to_migrate.name}")
+        self.logger.info(f"up {to_migrate.name}")
         session.atomic_execute(query=to_migrate.migrator.up, params=tuple())
         to_migrate.is_migrated = True
 

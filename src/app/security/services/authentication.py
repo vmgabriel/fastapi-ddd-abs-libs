@@ -81,7 +81,6 @@ def authenticate(
         username=user_data.username,
     )
 
-    print(f"permissions {user_data}")
     encoded = jwt.encode(
         current_user=auth_user,
         aud=(
@@ -127,7 +126,6 @@ def refresh_token(
         username=user_data.username,
     )
 
-    print(f"permissions {user_data.permissions}")
     encoded = jwt.encode(
         current_user=user_auth,
         aud=(

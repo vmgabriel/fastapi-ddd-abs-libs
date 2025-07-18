@@ -8,8 +8,8 @@ from src.domain.models import filter, mixin, repository
 from src.domain.models.repository import RepositoryData
 
 _SELECT_DEFAULT = "SELECT * FROM {} WHERE {};"
-_SELECT_COUNT_DEFAULT = "SELECT COUNT(*) FROM {};"
-_SELECT_WITH_OFFSET_LIMIT_DEFAULT = "SELECT * FROM {} WHERE {} LIMIT {},{};"
+_SELECT_COUNT_DEFAULT = "SELECT COUNT(*) FROM {} WHERE {};"
+_SELECT_WITH_OFFSET_LIMIT_DEFAULT = "SELECT * FROM {} WHERE {} LIMIT {} OFFSET {};"
 
 _INSERT_DEFAULT = "INSERT INTO {} ({}) VALUES ({}) RETURNING id;"
 _UPDATE_DEFAULT = "UPDATE {} SET {} WHERE {};"
@@ -17,8 +17,9 @@ _DELETE_DEFAULT = "UPDATE {} SET {} WHERE {};"
 
 
 def flatten(items: Iterable | str | bytes) -> Generator[str | bytes, str | bytes, None]:
-    if isinstance(items, (str | bytes)):
+    if isinstance(items, (str, bytes)):
         yield items
+        return
     for item in items:
         if isinstance(item, Iterable):
             yield from flatten(item)
@@ -52,17 +53,23 @@ class PostgresGetterMixin(mixin.GetterMixin, abc.ABC):
 
 class PostgresGetterListMixin(mixin.GetterListMixin, abc.ABC):
     def filter(self, criteria: filter.Criteria) -> filter.Paginator:
+        current_filters = " AND ".join(
+            current_filter.to_definition() for current_filter in criteria.filters
+        )
         script = _SELECT_WITH_OFFSET_LIMIT_DEFAULT.format(
             self.repository_persistence.table_name,
-            " AND ".join(
-                current_filter.to_definition() for current_filter in criteria.filters
-            ),
-            criteria.page_number,
+            current_filters,
             criteria.page_quantity,
+            criteria.page_number - 1,
         )
         count_script = _SELECT_COUNT_DEFAULT.format(
             self.repository_persistence.table_name,
+            current_filters,
         )
+
+        self.logger.info(f"Query [{script}]")
+        self.logger.info(f"Count Query [{count_script}]")
+
         inject: List[str] = []
         for current_filter in criteria.filters:
             if isinstance(current_filter, filter.FilterDefinition):
@@ -71,19 +78,23 @@ class PostgresGetterListMixin(mixin.GetterListMixin, abc.ABC):
             if isinstance(curr_filter, list):
                 inject += cast(Iterable[str], flatten(curr_filter))
                 continue
-            inject += flatten(curr_filter)
-        response = self._session.atomic_execute(query=script, params=tuple(inject))
-        response_count = self._session.atomic_execute(query=count_script)
+            inject += cast(str, flatten(curr_filter))
+        response_count = self._session.atomic_execute(
+            query=count_script, params=tuple(inject)
+        )
 
-        count = getattr(response_count, "fetchone", lambda: None)()
+        count = getattr(response_count, "fetchone", lambda: [None])()
+
+        response = self._session.atomic_execute(query=script, params=tuple(inject))
+
+        elements = cast(List[Any], getattr(response, "fetchall", lambda: [])())
 
         return filter.Paginator(
-            total=int(count or 0),
+            total=int(count[0] or 0),
             page=criteria.page_number,
             count=criteria.page_quantity,
             elements=[
-                cast(RepositoryData, self.serialize(record))
-                for record in getattr(response, "fetchall", lambda: [])()
+                cast(RepositoryData, self.serialize(record)) for record in elements
             ],
         )
 

@@ -15,6 +15,42 @@ class CreateBoardCommandRequest(command.CommandRequest):
     icon_url: str | None = None
 
 
+def get_board_by_id(
+    id: str,
+    repository_board: domain_repository.BoardRepository,
+    repository_ownership: domain_repository.OwnerShipBoardRepository,
+) -> entity_domain.Board | None:
+    try:
+        board = cast(entity_domain.Board, repository_board.get_by_id(id=id))
+        owners = repository_ownership.get_by_board_id(
+            board_id=id,
+        )
+        if not board:
+            raise repository_model.RepositoryNotFoundError()
+        for ownership in owners:
+            board.add_owner(user_id=ownership.user_id)
+        return cast(entity_domain.Board | None, board)
+    except repository_model.RepositoryNotFoundError:
+        return None
+
+
+def get_myself_board_by_id(
+    user_id: str,
+    board_id: str,
+    repository_board: domain_repository.BoardRepository,
+    repository_ownership: domain_repository.OwnerShipBoardRepository,
+) -> entity_domain.Board | None:
+    board = get_board_by_id(
+        id=board_id,
+        repository_board=repository_board,
+        repository_ownership=repository_ownership,
+    )
+    if not board or not board.is_owner(user_id=user_id):
+        raise ValueError("Board not found")
+
+    return board
+
+
 def create_board(
     payload: CreateBoardCommandRequest,
     user_id: str,
@@ -22,11 +58,14 @@ def create_board(
     repository_ownership: domain_repository.OwnerShipBoardRepository,
     logger: log_model.LogAdapter,
 ) -> entity_domain.Board:
-    try:
-        if repository_board.get_by_id(id=cast(str, payload.id)):
-            raise ValueError("Board already exists")
-    except repository_model.RepositoryNotFoundError:
-        logger.info("Board not found - Creating new one")
+    entity_board_domain = get_board_by_id(
+        repository_board=repository_board,
+        repository_ownership=repository_ownership,
+        id=cast(str, payload.id),
+    )
+    if entity_board_domain:
+        raise ValueError("Board already exists")
+    logger.info("Creating Board")
 
     new_entity_board = entity_domain.Board.create(
         id=str(payload.id),

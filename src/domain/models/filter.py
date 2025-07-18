@@ -193,14 +193,14 @@ class FilterBuilder:
 
 
 class Criteria:
-    filters: List[FilterDefinition | AndFilters | OrFilters]
+    filters: List[Filter | AndFilters | OrFilters]
     order_by: List[Ordered]
     page_quantity: int
     page_number: int
 
     def __init__(
         self,
-        filters: List[FilterDefinition | AndFilters | OrFilters],
+        filters: List[Filter | AndFilters | OrFilters],
         order_by: List[Ordered],
         page_quantity: int,
         page_number: int,

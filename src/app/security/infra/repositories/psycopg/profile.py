@@ -60,7 +60,6 @@ class PostgresProfileRepository(
     def serialize(self, data: Any) -> ProfileData | None:
         if not data:
             return None
-        print("profile-id - ", data)
         return ProfileData(
             id=data[0],
             phone=data[1],
