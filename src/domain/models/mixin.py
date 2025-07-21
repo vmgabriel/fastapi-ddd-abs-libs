@@ -1,5 +1,5 @@
 import abc
-from typing import Any, cast
+from typing import Any, List, cast
 
 from src.domain.models import filter, repository
 from src.infra.log import model as model_log
@@ -63,7 +63,12 @@ class GetterListMixin(abc.ABC):
         self._session = cast(model_uow.Session, kwargs.get("session"))
 
     @abc.abstractmethod
-    def filter(self, criteria: filter.Criteria) -> filter.Paginator:
+    def filter(
+        self,
+        criteria: filter.Criteria,
+        custom_filter: repository.CustomQuery | None = None,
+        joins: List[filter.Join] | None = None,
+    ) -> filter.Paginator:
         raise NotImplementedError()
 
     @abc.abstractmethod

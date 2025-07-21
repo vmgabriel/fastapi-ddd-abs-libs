@@ -24,6 +24,51 @@ class PersistenceTypeNotFoundError(Exception):
     message: str = "Persistence Not Found"
 
 
+class CustomQuery:
+    query: str
+    count_attributes: str
+    limit_offset: str
+
+    def __init__(
+        self,
+        query: str,
+        count_attributes: str,
+        limit_offset: str,
+    ) -> None:
+        self.count_attributes = count_attributes
+        self.query = query
+        self.limit_offset = limit_offset
+
+    def to_declaration(
+        self,
+        table_name: str,
+        attributes: str,
+        joins: str,
+        filters: str,
+        limit: str | None = None,
+        offset: str | None = None,
+        with_count: bool = False,
+    ) -> str:
+        if with_count:
+            return self.query.format(
+                table=table_name,
+                attributes=self.count_attributes,
+                joins=joins,
+                limits="",
+                filters=filters,
+            )
+
+        return self.query.format(
+            table=table_name,
+            attributes=attributes,
+            joins=joins,
+            filters=filters,
+            limits=self.limit_offset.format(
+                limit=str(limit or 1), offset=str(offset or 1)
+            ),
+        )
+
+
 class RepositoryData(pydantic.BaseModel):
     id: str
     deleted_at: datetime.datetime | None = None

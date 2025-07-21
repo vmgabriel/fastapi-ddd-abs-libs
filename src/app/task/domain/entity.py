@@ -13,6 +13,7 @@ class TaskStatus(enum.StrEnum):
     TODO = enum.auto()
     DOING = enum.auto()
     DONE = enum.auto()
+    ABANDONED = enum.auto()
 
 
 class TaskHistory(domain_repository.RepositoryData):
@@ -25,6 +26,7 @@ class TaskHistory(domain_repository.RepositoryData):
 
 class Task(domain_repository.RepositoryData):
     name: str
+    board_id: str
     description: str
     owner: str
     histories: list[TaskHistory] = pydantic.Field(default_factory=list)
@@ -36,11 +38,17 @@ class Task(domain_repository.RepositoryData):
 
     @staticmethod
     def create(
-        id: str, name: str, description: str, owner: str, icon_url: str | None = None
+        id: str,
+        name: str,
+        board_id: str,
+        description: str,
+        owner: str,
+        icon_url: str | None = None,
     ) -> "Task":
         return Task(
             id=id,
             name=name,
+            board_id=board_id,
             description=description,
             icon_url=icon_url,
             owner=owner,
@@ -104,7 +112,11 @@ class Task(domain_repository.RepositoryData):
                 type_of_change=domain_entity.HistoryChangeType.UPDATED,
                 changed_at=datetime.datetime.now(),
                 previous_values={
-                    current_value: str(getattr(self, current_value))
+                    current_value: (
+                        str(getattr(self, current_value))
+                        if getattr(self, current_value)
+                        else None
+                    )
                     for current_value in current_values.keys()
                 },
                 new_values=current_values,

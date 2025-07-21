@@ -1,5 +1,5 @@
 import datetime
-from typing import Any, List, Type
+from typing import Any, Dict, List, Type
 
 from src.domain.models import filter
 
@@ -266,6 +266,26 @@ class PostgresOrFilters(filter.OrFilters):
         )
 
 
+class PostgresJoined(filter.Joined):
+    def to_definition(self, join: filter.Join) -> str:
+        type_join_postgres: Dict[filter.JoinType, str] = {
+            filter.JoinType.INNER: "INNER JOIN",
+            filter.JoinType.LEFT: "LEFT JOIN",
+            filter.JoinType.RIGHT: "RIGHT JOIN",
+            filter.JoinType.FULL: "FULL JOIN",
+            filter.JoinType.OUTER: "OUTER JOIN",
+            filter.JoinType.CROSS: "CROSS JOIN",
+            filter.JoinType.NATURAL: "NATURAL JOIN",
+            filter.JoinType.LATERAL: "LATERAL JOIN",
+            filter.JoinType.LEFT_OUTER: "LEFT OUTER JOIN",
+        }
+        return "{type} {table} ON ({on})".format(
+            type=type_join_postgres[join.join_type],
+            table=join.table,
+            on=join.on,
+        )
+
+
 filters_definition = List[Type[filter.FilterDefinition]]
 postgres_filter_builder = filter.FilterBuilder()
 
@@ -307,3 +327,6 @@ postgres_filter_builder.inject_group_filter(
 postgres_filter_builder.inject_group_filter(
     filter.GroupFilterType.OR, PostgresOrFilters
 )
+
+# JOIN
+postgres_filter_builder.inject_join(PostgresJoined())

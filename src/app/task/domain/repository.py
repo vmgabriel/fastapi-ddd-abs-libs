@@ -1,6 +1,7 @@
 import abc
 from typing import List
 
+from src.domain.models import filter as filter_domain
 from src.domain.models import mixin, repository
 
 
@@ -15,6 +16,12 @@ class BoardRepository(
 ):
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
+
+    @abc.abstractmethod
+    def filter_by_user_id(
+        self, user_id: str, criteria: filter_domain.Criteria
+    ) -> filter_domain.Paginator:
+        raise NotImplementedError()
 
 
 class TaskRepository(
@@ -68,4 +75,20 @@ class OwnerShipBoardRepository(
 
     @abc.abstractmethod
     def get_by_board_id(self, board_id: str) -> List[OwnerShipRepositoryData]:
+        raise NotImplementedError()
+
+
+class DetailedBoardRepository(
+    repository.Repository,
+    mixin.GetterMixin,
+    mixin.GetterListMixin,
+    abc.ABC,
+):
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+
+    @abc.abstractmethod
+    def filter_by_user_id(
+        self, user_id: str, criteria: filter_domain.Criteria
+    ) -> filter_domain.Paginator:
         raise NotImplementedError()

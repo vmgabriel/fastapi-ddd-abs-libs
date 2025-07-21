@@ -9,6 +9,7 @@ import pydantic
 from . import repository
 
 T = TypeVar("T")
+Y = TypeVar("Y", bound=repository.RepositoryData)
 
 
 class OrderType(enum.StrEnum):
@@ -16,11 +17,23 @@ class OrderType(enum.StrEnum):
     DESC = enum.auto()
 
 
+class JoinType(enum.StrEnum):
+    INNER = enum.auto()
+    LEFT = enum.auto()
+    RIGHT = enum.auto()
+    FULL = enum.auto()
+    OUTER = enum.auto()
+    CROSS = enum.auto()
+    NATURAL = enum.auto()
+    LATERAL = enum.auto()
+    LEFT_OUTER = enum.auto()
+
+
 class Paginator(pydantic.BaseModel):
     total: int = 0
     page: int = 0
     count: int = 0
-    elements: List[repository.RepositoryData] = pydantic.Field(default_factory=list)
+    elements: List[Any] = pydantic.Field(default_factory=list)
 
     @property
     def total_pages(self) -> int:
@@ -66,6 +79,23 @@ class Filter:
 
     def to_definition(self) -> str:
         return self.filter_definition.to_definition()
+
+    def update_table(self, prefix: str) -> None:
+        self.filter_definition.attribute = (
+            f"{prefix}.{self.filter_definition.attribute}"
+        )
+
+
+class Join(pydantic.BaseModel):
+    table: str
+    on: str
+    join_type: JoinType = JoinType.INNER
+
+
+class Joined(abc.ABC):
+    @abc.abstractmethod
+    def to_definition(self, join: Join) -> str:
+        raise NotImplementedError()
 
 
 class Ordered(abc.ABC):
@@ -150,16 +180,21 @@ class FilterBuilder:
     filters: Dict[FilterType, Type[FilterDefinition]]
     group_filters: Dict[GroupFilterType, Type[AndFilters | OrFilters]]
     orders: Dict[OrderType, Type[Ordered]]
+    join: Joined | None = None
 
     def __init__(self) -> None:
         self.filters = {}
         self.orders = {}
         self.group_filters = {}
+        self.join = None
 
     def inject(
         self, type_filter: FilterType, filter_base: Type[FilterDefinition]
     ) -> None:
         self.filters[type_filter] = filter_base
+
+    def inject_join(self, join: Joined) -> None:
+        self.join = join
 
     def inject_order(self, type_order: OrderType, order_base: Type[Ordered]) -> None:
         self.orders[type_order] = order_base
@@ -209,3 +244,16 @@ class Criteria:
         self.order_by = order_by
         self.page_quantity = page_quantity
         self.page_number = page_number
+
+    def update_table(self, prefix: str) -> None:
+        for filter in self.filters:
+            if isinstance(filter, Filter):
+                filter.update_table(prefix)
+                continue
+            for sub_filter in filter.filters:
+                if isinstance(sub_filter, Filter):
+                    sub_filter.update_table(prefix)
+                    continue
+
+    def append(self, filter: Filter) -> None:
+        self.filters.append(filter)

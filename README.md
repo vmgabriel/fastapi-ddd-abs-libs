@@ -13,13 +13,22 @@ v0.2.0
 - [ ] Do Todo
     - [X] Add App With Domain Layer
     - [X] Add Properties attribute for Board
-    - [ ] Add Service Layer
+    - [X] Add Service Layer
     - [X] Migrate new Table for Task
     - [X] Migrate new Table for History
     - [X] Migrate new Table for Desk
     - [X] Add Repository
-    - [ ] Add Command
-    - [ ] CRUD Check of Integration Massive of All Rules
-    - [ ] Add Checkpoints CRUDS for Task Table
-    - [ ] Check List of Tasks - **Require a Validation**
-    - [ ] Check Rules
+    - [X] Add Command
+    - [X] Check List of Tasks - **Require a Validation**
+    - [X] Get Board
+    - [X] Create Board
+    - [X] Get With Details of Tasks and Members for Board
+    - [ ] Adjust Get By ID for Board Details
+    - [ ] Update Board Data
+    - [ ] Delete Board Data
+- [ ] Global Backlog
+    - [ ] Recovery Password
+    - [ ] List of Users
+    - [ ] Change Permissions Online
+        - [ ] Allow Add/Remove/Update Audiences in roles
+    - [ ] Validation for Logic Delete

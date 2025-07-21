@@ -4,9 +4,87 @@ from typing import Any, Dict, List, Type, cast
 
 import pydantic
 
+from src.domain.models import filter
+
+
+class CommandFilter(pydantic.BaseModel):
+    attribute: str
+    type: filter.FilterType
+    value: str | List[str]
+
+
+class CommandOrderBy(pydantic.BaseModel):
+    attribute: str
+    type: filter.OrderType
+
 
 class CommandRequest(pydantic.BaseModel):
     trace_id: uuid.UUID = pydantic.Field(default_factory=uuid.uuid4)
+
+
+class CommandQueryRequest(CommandRequest):
+    limit: int | None = None
+    offset: int | None = None
+    order_by: str | None = None
+    filters: str | None = None
+
+    def get_filters(self) -> List[CommandFilter]:
+        separator_filters = "|"
+        separator_filter = ","
+        comparator_filter = "::"
+        filter_type_separator = "__"
+
+        in_filter_data = self.filters.split(separator_filters) if self.filters else []
+
+        filters = []
+        for in_filter in in_filter_data:
+            filter_data = in_filter.split(comparator_filter)
+            if len(filter_data) != 2:
+                print(f"Filter Data Not Valid - {filter_data}")
+                continue
+
+            key = filter_data[0]
+            value = filter_data[1]
+
+            attribute_filter_key = key.split(filter_type_separator)
+
+            if len(attribute_filter_key) != 2:
+                print(f"Attribute Filter Key Not Valid - {attribute_filter_key}")
+                continue
+
+            attribute = attribute_filter_key[0]
+            filter_type = attribute_filter_key[1]
+
+            filters.append(
+                CommandFilter(
+                    attribute=attribute,
+                    type=filter.FilterType(filter_type.upper()),
+                    value=value.split(separator_filter),
+                )
+            )
+        return filters
+
+    def get_order_by(self) -> List[CommandOrderBy]:
+        separator_order_by = ","
+
+        in_order_by_data = (
+            self.order_by.split(separator_order_by) if self.order_by else []
+        )
+
+        orders_by = []
+        for in_order_by in in_order_by_data:
+            order_by_type = filter.OrderType.ASC
+            if in_order_by.startswith("-"):
+                in_order_by = in_order_by.replace("-", "")
+                order_by_type = filter.OrderType.DESC
+            orders_by.append(
+                CommandOrderBy(
+                    attribute=in_order_by,
+                    type=order_by_type,
+                )
+            )
+
+        return orders_by
 
 
 class CommandResponse(pydantic.BaseModel):

@@ -8,8 +8,9 @@ from src.domain.models import filter, mixin, repository
 from src.domain.models.repository import RepositoryData
 
 _SELECT_DEFAULT = "SELECT * FROM {} WHERE {};"
-_SELECT_COUNT_DEFAULT = "SELECT COUNT(*) FROM {} WHERE {};"
-_SELECT_WITH_OFFSET_LIMIT_DEFAULT = "SELECT * FROM {} WHERE {} LIMIT {} OFFSET {};"
+_SELECT_WITH_OFFSET_LIMIT_DEFAULT = (
+    "SELECT {attributes} FROM {table} {joins} WHERE {filters} {limits};"
+)
 
 _INSERT_DEFAULT = "INSERT INTO {} ({}) VALUES ({}) RETURNING id;"
 _UPDATE_DEFAULT = "UPDATE {} SET {} WHERE {};"
@@ -25,6 +26,18 @@ def flatten(items: Iterable | str | bytes) -> Generator[str | bytes, str | bytes
             yield from flatten(item)
         else:
             yield cast(str | bytes, item)
+
+
+class PostgresCustomQuery(repository.CustomQuery):
+    def __init__(self, query: str) -> None:
+        super().__init__(
+            query=query,
+            count_attributes="COUNT(*)",
+            limit_offset="LIMIT {limit} OFFSET {offset}",
+        )
+
+
+DEFAULT_CUSTOM_QUERY = PostgresCustomQuery(query=_SELECT_WITH_OFFSET_LIMIT_DEFAULT)
 
 
 class PostgresGetterMixin(mixin.GetterMixin, abc.ABC):
@@ -52,50 +65,106 @@ class PostgresGetterMixin(mixin.GetterMixin, abc.ABC):
 
 
 class PostgresGetterListMixin(mixin.GetterListMixin, abc.ABC):
-    def filter(self, criteria: filter.Criteria) -> filter.Paginator:
-        current_filters = " AND ".join(
-            current_filter.to_definition() for current_filter in criteria.filters
-        )
-        script = _SELECT_WITH_OFFSET_LIMIT_DEFAULT.format(
-            self.repository_persistence.table_name,
-            current_filters,
-            criteria.page_quantity,
-            criteria.page_number - 1,
-        )
-        count_script = _SELECT_COUNT_DEFAULT.format(
-            self.repository_persistence.table_name,
-            current_filters,
+    def _create_filters(
+        self,
+        filters: (
+            List[filter.Filter | filter.AndFilters | filter.OrFilters] | None
+        ) = None,
+    ) -> str:
+        current_filters = ""
+        if not filters:
+            return current_filters
+
+        return " AND ".join(
+            current_filter.to_definition() for current_filter in filters
         )
 
-        self.logger.info(f"Query [{script}]")
-        self.logger.info(f"Count Query [{count_script}]")
+    def _create_joins(self, joins: List[filter.Join] | None = None) -> str:
+        current_joins = ""
+        if not joins:
+            return current_joins
+
+        join_handler = cast(filter.Joined, self._filter_builder.join)
+
+        return " ".join(join_handler.to_definition(join) for join in joins if join)
+
+    def _create_params_filter(
+        self,
+        pre_filters: (
+            List[filter.Filter | filter.AndFilters | filter.OrFilters] | None
+        ) = None,
+        filters: (
+            List[filter.Filter | filter.AndFilters | filter.OrFilters] | None
+        ) = None,
+    ) -> Tuple[str, ...] | None:
+        if not filters:
+            filters = []
+
+        if not filters and not pre_filters:
+            return None
 
         inject: List[str] = []
-        for current_filter in criteria.filters:
-            if isinstance(current_filter, filter.FilterDefinition):
-                raise NotImplementedError("Filter definitions not implemented")
+
+        if pre_filters:
+            for pre_filter in pre_filters:
+                filters.insert(0, pre_filter)
+
+        for current_filter in filters:
             curr_filter = current_filter.get_values()
             if isinstance(curr_filter, list):
                 inject += cast(Iterable[str], flatten(curr_filter))
                 continue
             inject += cast(str, flatten(curr_filter))
-        response_count = self._session.atomic_execute(
-            query=count_script, params=tuple(inject)
+        return tuple(inject)
+
+    def filter(
+        self,
+        criteria: filter.Criteria,
+        custom_query: repository.CustomQuery | None = None,
+        joins: List[filter.Join] | None = None,
+    ) -> filter.Paginator:
+        if not custom_query:
+            custom_query = DEFAULT_CUSTOM_QUERY
+
+        current_filters = self._create_filters(filters=criteria.filters)
+        current_joins = self._create_joins(joins)
+
+        script = custom_query.to_declaration(
+            table_name=self.repository_persistence.table_name,
+            attributes="*",
+            joins=current_joins,
+            filters=current_filters,
+            limit=str(criteria.page_quantity),
+            offset=str(criteria.page_number - 1),
+        )
+        count_script = custom_query.to_declaration(
+            with_count=True,
+            table_name=self.repository_persistence.table_name,
+            attributes=custom_query.count_attributes,
+            joins=current_joins,
+            filters=current_filters,
+            limit=str(criteria.page_quantity),
+            offset=str(criteria.page_number - 1),
         )
 
+        self.logger.info(f"Query [{script}]")
+        self.logger.info(f"Count Query [{count_script}]")
+
+        inject = self._create_params_filter(filters=criteria.filters)
+
+        response_count = self._session.atomic_execute(query=count_script, params=inject)
         count = getattr(response_count, "fetchone", lambda: [None])()
 
-        response = self._session.atomic_execute(query=script, params=tuple(inject))
-
+        response = self._session.atomic_execute(query=script, params=inject)
         elements = cast(List[Any], getattr(response, "fetchall", lambda: [])())
 
+        total = int(count[0] or 0)
+
         return filter.Paginator(
-            total=int(count[0] or 0),
+            total=total,
             page=criteria.page_number,
-            count=criteria.page_quantity,
-            elements=[
-                cast(RepositoryData, self.serialize(record)) for record in elements
-            ],
+            count=criteria.page_quantity if total > criteria.page_quantity else total,
+            elements=[self.serialize(record) for record in elements],
         )
 
 

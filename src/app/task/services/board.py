@@ -1,8 +1,9 @@
 import uuid
-from typing import cast
+from typing import List, cast
 
 from src.app.task.domain import entity as entity_domain
 from src.app.task.domain import repository as domain_repository
+from src.domain.models import filter as filter_domain
 from src.domain.models import repository as repository_model
 from src.domain.services import command
 from src.infra.log import model as log_model
@@ -13,6 +14,34 @@ class CreateBoardCommandRequest(command.CommandRequest):
     description: str
     id: str | None
     icon_url: str | None = None
+
+
+def command_query_to_criteria(
+    query: command.CommandQueryRequest,
+    filter_builder: filter_domain.FilterBuilder,
+) -> filter_domain.Criteria:
+    current_filters = [
+        filter_builder.build(type_filter=filter.type)(filter.attribute)(filter.value)
+        for filter in query.get_filters()
+    ]
+    current_order_by = [
+        filter_builder.build_order(type_order=order_by.type)(order_by.attribute)
+        for order_by in query.get_order_by()
+    ]
+
+    return filter_domain.Criteria(
+        filters=cast(
+            List[
+                filter_domain.Filter
+                | filter_domain.AndFilters
+                | filter_domain.OrFilters
+            ],
+            current_filters,
+        ),
+        order_by=current_order_by,
+        page_quantity=query.limit or 1,
+        page_number=query.offset or 1,
+    )
 
 
 def get_board_by_id(
@@ -49,6 +78,17 @@ def get_myself_board_by_id(
         raise ValueError("Board not found")
 
     return board
+
+
+def paginate_myself_board(
+    user_id: str,
+    query: command.CommandQueryRequest,
+    repository_view_detailed_board: domain_repository.DetailedBoardRepository,
+    filter_builder: filter_domain.FilterBuilder,
+) -> filter_domain.Paginator:
+    return repository_view_detailed_board.filter_by_user_id(
+        user_id=user_id, criteria=command_query_to_criteria(query, filter_builder)
+    )
 
 
 def create_board(

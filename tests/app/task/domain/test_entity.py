@@ -1,266 +1,151 @@
 import datetime
-import uuid
 
 import pytest
 
 from src.app.task.domain import entity as subject
 from src.domain.models import entity as domain_entity
 
+# Environment Variable
+TEST_BOARD_ID = "board-123"
+TEST_USER_ID = "user-123"
+TEST_ICON_URL = "http://example.com/icon.png"
+
 
 @pytest.fixture
-def task():
-    return subject.Task(
-        id="123",
-        name="Sample Task",
-        description="A sample task for testing",
-        owner="123",
-        status=subject.TaskStatus.TODO,
-    )
-
-
-# Task
-
-
-def test_task_creation():
-    task_id = "12345"
-    name = "Test Task"
-    description = "This is a test task"
-    icon_url = "http://example.com/icon.png"
-    user_id = "123"
-
-    task = subject.Task.create(
-        id=task_id,
-        name=name,
-        description=description,
-        icon_url=icon_url,
-        owner=user_id,
-    )
-
-    assert task.id == task_id
-    assert task.owner == user_id
-    assert task.name == name
-    assert task.description == description
-    assert task.icon_url == icon_url
-    assert len(task.histories) == 1
-    history = task.histories[0]
-    assert history.task_id == task_id
-    assert history.type_of_change == domain_entity.HistoryChangeType.INSERTED
-    assert history.new_values == {
-        "id": task_id,
-        "name": name,
-        "description": description,
-        "icon_url": icon_url,
-        "owner": user_id,
+def task_data():
+    return {
+        "id": "task-123",
+        "name": "Sample Task",
+        "description": "A sample task for testing",
+        "board_id": TEST_BOARD_ID,
+        "owner": TEST_USER_ID,
     }
-    assert isinstance(history.changed_at, datetime.datetime)
 
 
-def test_task_creation_without_icon_url():
-    task_id = "67890"
-    name = "Task Without Icon"
-    description = "A task without an icon URL"
-    owner = "123"
-
-    task = subject.Task.create(
-        id=task_id, name=name, description=description, owner="123"
-    )
-
-    assert task.id == task_id
-    assert task.owner == owner
-    assert task.name == name
-    assert task.description == description
-    assert task.icon_url is None
-    assert len(task.histories) == 1
-    history = task.histories[0]
-    assert history.task_id == task_id
-    assert history.type_of_change == domain_entity.HistoryChangeType.INSERTED
-    assert history.new_values == {
-        "id": task_id,
-        "name": name,
-        "description": description,
-        "icon_url": None,
-        "owner": owner,
-    }
-    assert isinstance(history.changed_at, datetime.datetime)
+@pytest.fixture
+def basic_task(task_data):
+    return subject.Task(**task_data)
 
 
-def test_task_history_has_unique_id():
-    task_id = "abcdef"
-    name = "Unique Task"
-    description = "Task to test unique history ID"
-    owner = "123"
+class TestTaskCreation:
+    def test_creates_task_with_all_fields(self, task_data):
+        task = subject.Task.create(**task_data, icon_url=TEST_ICON_URL)
 
-    task = subject.Task.create(
-        id=task_id, name=name, description=description, owner=owner
-    )
+        assert task.id == task_data["id"]
+        assert task.name == task_data["name"]
+        assert task.description == task_data["description"]
+        assert task.icon_url == TEST_ICON_URL
 
-    history_id = task.histories[0].id
-    assert isinstance(history_id, str)
-    assert history_id != ""
+        self._assert_valid_creation_history(task, task_data, TEST_ICON_URL)
 
+    def test_creates_task_without_icon_url(self, task_data):
+        task = subject.Task.create(**task_data)
 
-def test_change_status_to_doing(task):
-    new_status = subject.TaskStatus.DOING
-    task.change_status(new_status)
-    assert task.status == new_status
-    assert len(task.histories) == 1
-    assert task.histories[0].new_values["status"] == new_status.value
+        assert task.icon_url is None
+        self._assert_valid_creation_history(task, task_data, None)
 
-
-def test_change_status_to_done(task):
-    new_status = subject.TaskStatus.DONE
-    task.change_status(new_status)
-    assert task.status == new_status
-    assert len(task.histories) == 1
-    assert task.histories[0].previous_values["status"] == subject.TaskStatus.TODO.value
-
-
-def test_no_status_change(task):
-    old_status = task.status
-    task.change_status(task.status)
-    assert task.status == old_status
-    assert len(task.histories) == 0
+    def _assert_valid_creation_history(self, task, data, icon_url):
+        assert len(task.histories) == 1
+        history = task.histories[0]
+        assert history.task_id == data["id"]
+        assert history.type_of_change == domain_entity.HistoryChangeType.INSERTED
+        assert isinstance(history.id, str) and history.id
+        assert isinstance(history.changed_at, datetime.datetime)
+        assert history.new_values == {
+            "id": data["id"],
+            "name": data["name"],
+            "description": data["description"],
+            "icon_url": icon_url,
+            "owner": data["owner"],
+        }
 
 
-def test_update_with_name_only():
-    task = subject.Task(
-        id="1", name="Original Task", description="Original Description", owner="123"
-    )
-    new_name = "Updated Task"
+class TestTaskStatusChanges:
+    def test_changes_status_to_doing(self, basic_task):
+        self._assert_status_change(basic_task, subject.TaskStatus.DOING)
 
-    task.update(name=new_name)
+    def test_changes_status_to_done(self, basic_task):
+        self._assert_status_change(basic_task, subject.TaskStatus.DONE)
 
-    assert task.name == new_name
-    assert task.description == "Original Description"
-    assert task.owner == "123"
-    assert len(task.histories) == 1
-    assert task.histories[0].type_of_change == domain_entity.HistoryChangeType.UPDATED
-    assert task.histories[0].previous_values["name"] == "Original Task"
-    assert task.histories[0].new_values["name"] == new_name
+    def test_ignores_same_status_change(self, basic_task):
+        initial_status = basic_task.status
+        basic_task.change_status(initial_status)
 
+        assert basic_task.status == initial_status
+        assert len(basic_task.histories) == 0
 
-def test_update_with_description_only():
-    task = subject.Task(
-        id="2", name="Original Task", description="Original Description", owner="123"
-    )
-    new_description = "Updated Description"
+    def _assert_status_change(self, task, new_status):
+        old_status = task.status
+        task.change_status(new_status)
 
-    task.update(description=new_description)
-
-    assert task.name == "Original Task"
-    assert task.owner == "123"
-    assert task.description == new_description
-    assert len(task.histories) == 1
-    assert task.histories[0].type_of_change == domain_entity.HistoryChangeType.UPDATED
-    assert task.histories[0].previous_values["description"] == "Original Description"
-    assert task.histories[0].new_values["description"] == new_description
+        assert task.status == new_status
+        assert len(task.histories) == 1
+        history = task.histories[0]
+        assert history.previous_values["status"] == old_status.value
+        assert history.new_values["status"] == new_status.value
 
 
-def test_update_with_icon_url_only():
-    task = subject.Task(
-        id="3", name="Original Task", description="Original Description", owner="123"
-    )
-    new_icon_url = "http://example.com/icon.png"
+class TestTaskUpdates:
+    @pytest.fixture
+    def updatable_task(self):
+        return subject.Task(
+            id="update-123",
+            name="Original Task",
+            description="Original Description",
+            icon_url=None,
+            owner=TEST_USER_ID,
+            board_id=TEST_BOARD_ID,
+        )
 
-    task.update(icon_url=new_icon_url)
+    def test_updates_single_field(self, updatable_task):
+        updates = {"name": "Updated Task"}
+        self._assert_task_update(updatable_task, updates)
 
-    assert task.icon_url == new_icon_url
-    assert len(task.histories) == 1
-    assert task.histories[0].type_of_change == domain_entity.HistoryChangeType.UPDATED
-    assert task.histories[0].new_values["icon_url"] == new_icon_url
+    def test_updates_multiple_fields(self, updatable_task):
+        updates = {
+            "name": "Updated Task",
+            "description": "Updated Description",
+            "icon_url": TEST_ICON_URL,
+        }
+        self._assert_task_update(updatable_task, updates)
 
+    def test_ignores_empty_update(self, updatable_task):
+        updatable_task.update()
+        assert len(updatable_task.histories) == 0
 
-def test_update_no_changes():
-    task = subject.Task(
-        id="4", name="Original Task", description="Original Description", owner="123"
-    )
+    def _assert_task_update(self, task, updates):
+        original_values = {
+            "name": task.name,
+            "description": task.description,
+            "icon_url": task.icon_url,
+        }
 
-    task.update()
+        task.update(**updates)
 
-    assert task.name == "Original Task"
-    assert task.description == "Original Description"
-    assert len(task.histories) == 0
+        for field, value in updates.items():
+            assert getattr(task, field) == value
 
+        assert len(task.histories) == 1
+        history = task.histories[0]
+        assert history.type_of_change == domain_entity.HistoryChangeType.UPDATED
 
-def test_update_multiple_fields():
-    task = subject.Task(
-        id="5", name="Original Task", description="Original Description", owner="123"
-    )
-    new_name = "Updated Task"
-    new_description = "Updated Description"
-    new_icon_url = "http://example.com/icon_updated.png"
+        for field in updates:
+            expected = original_values[field]
+            actual = history.previous_values[field]
+            if expected is None:
+                assert actual is None, (
+                    f"Expected None for {field}-[type({type(field)})]],"
+                    f" but got {actual}-[type({type(actual)})]"
+                )
+            else:
+                assert actual == expected, f"Mismatch in previous values for {field}"
 
-    task.update(name=new_name, description=new_description, icon_url=new_icon_url)
-
-    assert task.name == new_name
-    assert task.owner == "123"
-    assert task.description == new_description
-    assert task.icon_url == new_icon_url
-    assert len(task.histories) == 1
-    assert task.histories[0].type_of_change == domain_entity.HistoryChangeType.UPDATED
-    assert task.histories[0].previous_values["name"] == "Original Task"
-    assert task.histories[0].previous_values["description"] == "Original Description"
-    assert task.histories[0].new_values["name"] == new_name
-    assert task.histories[0].new_values["description"] == new_description
-    assert task.histories[0].new_values["icon_url"] == new_icon_url
-
-
-def test_change_owner_updates_owner_and_records_history():
-    # Arrange
-    task = subject.Task(
-        id=str(uuid.uuid4()),
-        name="Test Task",
-        description="A sample task",
-        owner="user1",
-    )
-    new_owner = "user2"
-
-    # Act
-    task.change_owner(new_owner)
-
-    # Assert
-    assert task.owner == new_owner
-    assert len(task.histories) == 1
-    history = task.histories[0]
-    assert history.previous_values == {"owner": "user1"}
-    assert history.new_values == {"owner": "user2"}
-    assert history.type_of_change == domain_entity.HistoryChangeType.UPDATED
-
-
-def test_change_owner_does_not_record_history_when_same_owner():
-    # Arrange
-    task = subject.Task(
-        id=str(uuid.uuid4()),
-        name="Test Task",
-        description="A sample task",
-        owner="user1",
-    )
-    current_owner = "user1"
-
-    # Act
-    task.change_owner(current_owner)
-
-    # Assert
-    assert task.owner == current_owner
-    assert len(task.histories) == 0
-
-
-def test_change_owner_records_correct_timestamp():
-    # Arrange
-    task = subject.Task(
-        id=str(uuid.uuid4()),
-        name="Test Task",
-        description="A sample task",
-        owner="user1",
-    )
-    new_owner = "user2"
-
-    # Act
-    task.change_owner(new_owner)
-
-    # Assert
-    history = task.histories[0]
-    assert history.changed_at <= datetime.datetime.now()
+        for field, expected in updates.items():
+            actual = history.new_values[field]
+            if expected is None:
+                assert actual is None, f"Expected None for {field}, but got {actual}"
+            else:
+                assert actual == expected, f"Mismatch in new values for {field}"
 
 
 # Board

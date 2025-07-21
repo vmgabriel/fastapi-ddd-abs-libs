@@ -94,7 +94,7 @@ class FastApiAdapter(model.HttpModel):
             parameters = {
                 parameter: kwargs.get(parameter, "")
                 for parameter in route.path_parameters
-                if parameter != "user"
+                if parameter not in ("user", "query")
             }
             if with_token and "user" in route.path_parameters and status_authentication:
                 data = cast(jwt_model.JWTData, status_authentication.data)
@@ -102,7 +102,7 @@ class FastApiAdapter(model.HttpModel):
             cmd.inject_parameters(parameters)
             request_data: command.CommandRequest | None = None
             if is_get:
-                request_data = command.CommandRequest()
+                request_data = cast(command.CommandRequest, kwargs.get("q", ...))
             else:
                 request_data = cast(command.CommandRequest, kwargs.get("payload", ...))
             cmd.inject_request(request_data)
@@ -149,13 +149,18 @@ class FastApiAdapter(model.HttpModel):
         parameters: Dict[str, str | tuple[str, str]] = {
             parameter: "str"
             for parameter in route.path_parameters
-            if "user" != parameter
+            if parameter not in ("user", "query")
         }
         if is_get:
             namespace["command"] = command
             namespace["Query"] = fastapi.Query
             namespace["Annotated"] = Annotated
-            parameters.update({"q": "Annotated[command.CommandRequest, Query()]"})
+            if "query" in route.path_parameters:
+                parameters.update(
+                    {"q": "Annotated[command.CommandQueryRequest, Query()]"}
+                )
+            else:
+                parameters.update({"q": "Annotated[command.CommandRequest, Query()]"})
         else:
             parameters.update({"payload": route.cmd.request_type.__name__})
         if with_token:
