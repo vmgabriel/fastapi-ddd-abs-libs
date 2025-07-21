@@ -39,7 +39,7 @@ def command_query_to_criteria(
             current_filters,
         ),
         order_by=current_order_by,
-        page_quantity=query.limit or 1,
+        page_quantity=query.limit or 30,
         page_number=query.offset or 1,
     )
 

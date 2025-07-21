@@ -216,7 +216,7 @@ board_member_details AS (
                 ),
                 'profile_id', p.id,
                 'icon_url', p.icon_url,
-                'role', ob.board_id
+                'role', ob.role
         )) as members
     FROM user_accessible_boards uab
         JOIN tbl_ownership_board ob ON ob.board_id = uab.board_id
