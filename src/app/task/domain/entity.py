@@ -16,6 +16,12 @@ class TaskStatus(enum.StrEnum):
     ABANDONED = enum.auto()
 
 
+class RoleMemberType(enum.StrEnum):
+    EDITOR = enum.auto()
+    VIEWER = enum.auto()
+    ADMIN = enum.auto()
+
+
 class TaskHistory(domain_repository.RepositoryData):
     task_id: str
     changed_at: datetime.datetime
@@ -146,15 +152,28 @@ class Task(domain_repository.RepositoryData):
         self.owner = owner
 
 
+class BoardMember(pydantic.BaseModel):
+    user_id: str
+    board_id: str
+    role: RoleMemberType = RoleMemberType.VIEWER
+
+    def __eq__(self, other: object) -> bool:
+        return self.user_id == getattr(
+            other, "user_id", ""
+        ) and self.board_id == getattr(other, "board_id", "")
+
+
 class Board(domain_repository.RepositoryData):
     name: str
     description: str
     icon_url: str | None = None
     tasks: list[Task] = pydantic.Field(default_factory=list)
-    owners: list[str] = pydantic.Field(default_factory=list)
+    members: list[BoardMember] = pydantic.Field(default_factory=list)
 
-    def is_owner(self, user_id: str) -> bool:
-        return user_id in self.owners
+    def is_member(self, member: BoardMember) -> bool:
+        return any(
+            check_member.user_id == member.user_id for check_member in self.members
+        )
 
     @staticmethod
     def create(
@@ -166,14 +185,16 @@ class Board(domain_repository.RepositoryData):
             description=description,
             icon_url=icon_url,
             tasks=[],
-            owners=[user_id],
+            members=[
+                BoardMember(user_id=user_id, board_id=id, role=RoleMemberType.ADMIN)
+            ],
         )
 
     def add_task(self, task: Task) -> None:
         self.tasks.append(task)
 
-    def add_owner(self, user_id: str) -> None:
-        self.owners.append(user_id)
+    def add_member(self, member: BoardMember) -> None:
+        self.members.append(member)
 
-    def remove_owner(self, user_id: str) -> None:
-        self.owners.remove(user_id)
+    def remove_member(self, member: BoardMember) -> None:
+        self.members.remove(member)

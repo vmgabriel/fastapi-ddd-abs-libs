@@ -2,8 +2,8 @@ from unittest.mock import Mock
 
 import pytest
 
+from src.app.task.domain import entity as entity_repository
 from src.app.task.domain import repository as domain_repository
-from src.app.task.domain.entity import Board
 from src.app.task.services import board as board_services
 from src.domain.models.repository import RepositoryNotFoundError
 from src.infra.log.model import LogAdapter
@@ -18,9 +18,9 @@ TEST_ICON_URL = "http://example.com/icon.png"
 
 @pytest.fixture
 def mock_board():
-    board = Mock(spec=Board)
+    board = Mock(spec=entity_repository.Board)
     board.id = VALID_BOARD_ID
-    board.add_owner = Mock()
+    board.add_member = Mock()
     return board
 
 
@@ -48,7 +48,8 @@ class TestGetBoardById:
             domain_repository.OwnerShipRepositoryData(
                 id="",
                 user_id=VALID_USER_ID,
-                board_id="",
+                board_id=VALID_BOARD_ID,
+                role=entity_repository.RoleMemberType.VIEWER,
             )
         ]
 
@@ -57,7 +58,13 @@ class TestGetBoardById:
         )
 
         assert result == mock_board
-        mock_board.add_owner.assert_called_with(user_id=VALID_USER_ID)
+        mock_board.add_member.assert_called_with(
+            member=entity_repository.BoardMember(
+                user_id=VALID_USER_ID,
+                board_id=VALID_BOARD_ID,
+                role=entity_repository.RoleMemberType.VIEWER,
+            )
+        )
 
     def test_not_found(self, mock_board_repository, mock_ownership_repository):
         mock_board_repository.get_by_id.side_effect = RepositoryNotFoundError
@@ -79,14 +86,14 @@ class TestGetBoardById:
         )
 
         assert result == mock_board
-        mock_board.add_owner.assert_not_called()
+        mock_board.add_member.assert_not_called()
 
 
 class TestGetMyselfBoardById:
     def test_success(
         self, mock_board, mock_board_repository, mock_ownership_repository
     ):
-        mock_board.is_owner.return_value = True
+        mock_board.is_member.return_value = True
         mock_board_repository.get_by_id.return_value = mock_board
 
         mock_ownership_repository.get_by_board_id.return_value = [
@@ -94,6 +101,7 @@ class TestGetMyselfBoardById:
                 id="",
                 user_id=VALID_USER_ID,
                 board_id="",
+                role=entity_repository.RoleMemberType.VIEWER,
             )
         ]
 
@@ -105,12 +113,18 @@ class TestGetMyselfBoardById:
         )
 
         assert result == mock_board
-        mock_board.is_owner.assert_called_once_with(user_id=VALID_USER_ID)
+        mock_board.is_member.assert_called_once_with(
+            member=entity_repository.BoardMember(
+                user_id=VALID_USER_ID,
+                board_id=VALID_BOARD_ID,
+                role=entity_repository.RoleMemberType.VIEWER,
+            )
+        )
 
-    def test_not_owner(
+    def test_not_member(
         self, mock_board, mock_board_repository, mock_ownership_repository
     ):
-        mock_board.is_owner.return_value = False
+        mock_board.is_member.return_value = False
         mock_board_repository.get_by_id.return_value = mock_board
 
         mock_ownership_repository.get_by_board_id.return_value = [
@@ -118,6 +132,7 @@ class TestGetMyselfBoardById:
                 id="",
                 user_id="invalid_user_id",
                 board_id="",
+                role=entity_repository.RoleMemberType.VIEWER,
             )
         ]
 
@@ -155,11 +170,18 @@ class TestCreateBoard:
             logger=mock_logger,
         )
 
-        assert isinstance(result, Board)
+        assert isinstance(result, entity_repository.Board)
         assert result.name == TEST_BOARD_NAME
         assert result.description == TEST_BOARD_DESCRIPTION
         assert result.icon_url == TEST_ICON_URL
-        assert VALID_USER_ID in result.owners
+        assert result.is_member(
+            member=entity_repository.BoardMember(
+                user_id=VALID_USER_ID,
+                board_id="board123",
+                role=entity_repository.RoleMemberType.VIEWER,
+            )
+        )
+
         mock_logger.info.assert_called_once_with("Creating Board")
         mock_board_repository.create.assert_called_once_with(new=result)
         assert mock_ownership_repository.create.call_count == 1
@@ -168,7 +190,9 @@ class TestCreateBoard:
         self, mock_board_repository, mock_ownership_repository, mock_logger
     ):
         payload = self.get_create_board_payload()
-        mock_board_repository.get_by_id.return_value = Mock(spec=Board)
+        mock_board_repository.get_by_id.return_value = Mock(
+            spec=entity_repository.Board
+        )
 
         mock_ownership_repository.get_by_board_id.return_value = []
 

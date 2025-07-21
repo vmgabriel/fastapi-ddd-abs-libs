@@ -57,7 +57,13 @@ def get_board_by_id(
         if not board:
             raise repository_model.RepositoryNotFoundError()
         for ownership in owners:
-            board.add_owner(user_id=ownership.user_id)
+            board.add_member(
+                member=entity_domain.BoardMember(
+                    user_id=ownership.user_id,
+                    board_id=ownership.board_id,
+                    role=ownership.role,
+                )
+            )
         return cast(entity_domain.Board | None, board)
     except repository_model.RepositoryNotFoundError:
         return None
@@ -74,7 +80,11 @@ def get_myself_board_by_id(
         repository_board=repository_board,
         repository_ownership=repository_ownership,
     )
-    if not board or not board.is_owner(user_id=user_id):
+    if not board or not board.is_member(
+        member=entity_domain.BoardMember(
+            user_id=user_id, board_id=board_id, role=entity_domain.RoleMemberType.VIEWER
+        )
+    ):
         raise ValueError("Board not found")
 
     return board
@@ -116,12 +126,13 @@ def create_board(
     )
 
     repository_board.create(new=new_entity_board)
-    for owner in new_entity_board.owners:
+    for member in new_entity_board.members:
         repository_ownership.create(
             new=domain_repository.OwnerShipRepositoryData(
                 id=str(uuid.uuid4()),
                 board_id=new_entity_board.id,
-                user_id=owner,
+                user_id=member.user_id,
+                role=member.role,
             )
         )
 

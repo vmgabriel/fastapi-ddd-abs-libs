@@ -160,8 +160,11 @@ def test_create_board_with_all_fields():
         user_id="user_id",
     )
     assert board.id == "1"
-    assert len(board.owners) == 1
-    assert board.owners[0] == "user_id"
+    assert len(board.members) == 1
+
+    assert board.members[0].user_id == "user_id"
+    assert board.members[0].board_id == "1"
+
     assert board.name == "Project A"
     assert board.description == "Description of Project A"
     assert board.icon_url == "http://example.com/icon.png"
@@ -180,5 +183,7 @@ def test_create_board_with_minimum_fields():
     assert board.description == "Description of Project B"
     assert board.icon_url is None
     assert board.tasks == []
-    assert len(board.owners) == 1
-    assert board.owners[0] == "user_id"
+    assert len(board.members) == 1
+
+    assert board.members[0].user_id == "user_id"
+    assert board.members[0].board_id == "2"

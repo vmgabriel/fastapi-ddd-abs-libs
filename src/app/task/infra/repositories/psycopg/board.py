@@ -88,6 +88,7 @@ class PostgresOwnerShipBoardRepository(
                     "id",
                     "board_id",
                     "user_id",
+                    "role",
                     "created_at",
                     "updated_at",
                     "deleted_at",
@@ -162,6 +163,7 @@ class PostgresOwnerShipBoardRepository(
             created_at=data[4],
             updated_at=data[5],
             deleted_at=data[6],
+            role=data[7],
         )
 
 

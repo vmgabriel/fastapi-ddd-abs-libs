@@ -4,6 +4,8 @@ from typing import List
 from src.domain.models import filter as filter_domain
 from src.domain.models import mixin, repository
 
+from . import entity as entity_domain
+
 
 class BoardRepository(
     repository.Repository,
@@ -53,6 +55,7 @@ class TaskHistoryRepository(
 class OwnerShipRepositoryData(repository.RepositoryData):
     user_id: str
     board_id: str
+    role: entity_domain.RoleMemberType
 
 
 class OwnerShipBoardRepository(
