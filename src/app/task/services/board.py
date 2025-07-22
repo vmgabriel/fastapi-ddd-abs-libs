@@ -9,11 +9,14 @@ from src.domain.services import command
 from src.infra.log import model as log_model
 
 
-class CreateBoardCommandRequest(command.CommandRequest):
+class UpdateBoardCommandRequest(command.CommandRequest):
     name: str
     description: str
-    id: str | None
     icon_url: str | None = None
+
+
+class CreateBoardCommandRequest(UpdateBoardCommandRequest):
+    id: str | None
 
 
 def command_query_to_criteria(
@@ -137,3 +140,34 @@ def create_board(
         )
 
     return new_entity_board
+
+
+def update_board(
+    payload: UpdateBoardCommandRequest,
+    user_id: str,
+    board_id: str,
+    repository_board: domain_repository.BoardRepository,
+    repository_ownership: domain_repository.OwnerShipBoardRepository,
+    logger: log_model.LogAdapter,
+):
+    entity_board_domain = get_board_by_id(
+        repository_board=repository_board,
+        repository_ownership=repository_ownership,
+        id=board_id,
+    )
+    if not entity_board_domain:
+        raise ValueError(f"Board {board_id} not found")
+    logger.info("Updating Board")
+
+    entity_board_domain.update(
+        member_that_update=entity_domain.BoardMember(
+            user_id=user_id, board_id=board_id, role=entity_domain.RoleMemberType.VIEWER
+        ),
+        name=payload.name,
+        description=payload.description,
+        icon_url=payload.icon_url,
+    )
+
+    repository_board.update(id=board_id, to_update=entity_board_domain)
+
+    return entity_board_domain

@@ -23,7 +23,7 @@ v0.2.0
     - [X] Get Board
     - [X] Create Board
     - [X] Get With Details of Tasks and Members for Board
-    - [ ] Adjust Get By ID for Board Details
+    - [X] Adjust Get By ID for Board Details
     - [ ] Update Board Data
     - [ ] Delete Board Data
 - [ ] Global Backlog

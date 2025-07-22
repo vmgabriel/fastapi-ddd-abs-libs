@@ -204,3 +204,177 @@ class TestCreateBoard:
                 repository_ownership=mock_ownership_repository,
                 logger=mock_logger,
             )
+
+
+class MockBoardRepository(domain_repository.BoardRepository):
+    def __init__(self):
+        self.boards = {}
+
+    def get_by_id(self, id):
+        return self.boards.get(id)
+
+    def update(self, id, to_update):
+        if id in self.boards:
+            self.boards[id] = to_update
+
+    def create(self, new):
+        self.boards[new.id] = new
+        return new
+
+    def delete(self, id):
+        if id in self.boards:
+            del self.boards[id]
+
+    def filter(self, criteria):
+        return list(self.boards.values())
+
+    def filter_by_user_id(self, user_id, criteria):
+        return list(self.boards.values())
+
+    def serialize(self, data):
+        return data
+
+
+class MockOwnerShipBoardRepository(domain_repository.OwnerShipBoardRepository):
+    def __init__(self):
+        self.ownerships = []
+
+    def get_by_board_id(self, board_id):
+        return [o for o in self.ownerships if o.board_id == board_id]
+
+    def get_by_id(self, id):
+        # Implementación simple para pruebas
+        for ownership in self.ownerships:
+            if ownership.id == id:
+                return ownership
+        return None
+
+    def get_by_user_id_and_board_id(self, user_id, board_id):
+        # Implementación simple para pruebas
+        for ownership in self.ownerships:
+            if ownership.user_id == user_id and ownership.board_id == board_id:
+                return ownership
+        return None
+
+    def create(self, new):
+        self.ownerships.append(new)
+        return new
+
+    def update(self, id, to_update):
+        for i, ownership in enumerate(self.ownerships):
+            if ownership.id == id:
+                self.ownerships[i] = to_update
+                return
+
+    def delete(self, id):
+        self.ownerships = [o for o in self.ownerships if o.id != id]
+
+    def filter(self, criteria):
+        # Implementación simple para pruebas
+        return self.ownerships
+
+    def serialize(self, data):
+        # Implementación simple para pruebas
+        return data
+
+
+class MockLogAdapter(LogAdapter):
+    def _message(self, msg, status):
+        pass
+
+
+@pytest.fixture
+def mock_dependencies():
+    mock_board_repo = MockBoardRepository()
+    mock_ownership_repo = MockOwnerShipBoardRepository()
+    mock_logger = MockLogAdapter(None)
+
+    board = entity_repository.Board.create(
+        id="mock-board-id",
+        name="Original Board Name",
+        description="Original Board Description",
+        user_id="admin-user",
+    )
+
+    board.add_member(
+        entity_repository.BoardMember(
+            user_id="non-admin-user",
+            board_id="mock-board-id",
+            role=entity_repository.RoleMemberType.VIEWER,
+        )
+    )
+
+    mock_board_repo.boards["mock-board-id"] = board
+
+    mock_ownership_repo.ownerships.append(
+        domain_repository.OwnerShipRepositoryData(
+            id="ownership-1",
+            user_id="non-admin-user",
+            board_id="mock-board-id",
+            role=entity_repository.RoleMemberType.VIEWER,
+        )
+    )
+
+    return mock_board_repo, mock_ownership_repo, mock_logger
+
+
+def test_update_board_success(mock_dependencies):
+    mock_board_repo, mock_ownership_repo, mock_logger = mock_dependencies
+    payload = board_services.UpdateBoardCommandRequest(
+        name="Updated Board Name",
+        description="Updated Board Description",
+        icon_url="new-icon-url",
+    )
+
+    result = board_services.update_board(
+        payload=payload,
+        user_id="admin-user",
+        board_id="mock-board-id",
+        repository_board=mock_board_repo,
+        repository_ownership=mock_ownership_repo,
+        logger=mock_logger,
+    )
+
+    updated_board = mock_board_repo.get_by_id("mock-board-id")
+    assert updated_board.name == "Updated Board Name"
+    assert updated_board.description == "Updated Board Description"
+    assert updated_board.icon_url == "new-icon-url"
+    assert result.name == "Updated Board Name"
+
+
+def test_update_board_not_admin(mock_dependencies):
+    mock_board_repo, mock_ownership_repo, mock_logger = mock_dependencies
+    payload = board_services.UpdateBoardCommandRequest(
+        name="Updated Board Name",
+        description="Updated Board Description",
+        icon_url=None,
+    )
+
+    with pytest.raises(entity_repository.NotAdminOfBoardError):
+        board_services.update_board(
+            payload=payload,
+            user_id="non-admin-user",
+            board_id="mock-board-id",
+            repository_board=mock_board_repo,
+            repository_ownership=mock_ownership_repo,
+            logger=mock_logger,
+        )
+
+
+def test_update_nonexistent_board(mock_dependencies):
+    mock_board_repo, mock_ownership_repo, mock_logger = mock_dependencies
+    payload = board_services.UpdateBoardCommandRequest(
+        name="Updated Board Name",
+        description="Updated Board Description",
+        icon_url=None,
+    )
+
+    with pytest.raises(ValueError, match="Board nonexistent-board-id not found"):
+        board_services.update_board(
+            payload=payload,
+            user_id="admin-user",
+            board_id="nonexistent-board-id",
+            repository_board=mock_board_repo,
+            repository_ownership=mock_ownership_repo,
+            logger=mock_logger,
+        )

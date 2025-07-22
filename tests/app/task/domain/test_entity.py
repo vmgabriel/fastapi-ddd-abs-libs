@@ -5,10 +5,11 @@ import pytest
 from src.app.task.domain import entity as subject
 from src.domain.models import entity as domain_entity
 
-# Environment Variable
-TEST_BOARD_ID = "board-123"
-TEST_USER_ID = "user-123"
-TEST_ICON_URL = "http://example.com/icon.png"
+
+class TestConstants:
+    BOARD_ID = "board-123"
+    USER_ID = "user-123"
+    ICON_URL = "http://example.com/icon.png"
 
 
 @pytest.fixture
@@ -17,8 +18,8 @@ def task_data():
         "id": "task-123",
         "name": "Sample Task",
         "description": "A sample task for testing",
-        "board_id": TEST_BOARD_ID,
-        "owner": TEST_USER_ID,
+        "board_id": TestConstants.BOARD_ID,
+        "owner": TestConstants.USER_ID,
     }
 
 
@@ -27,24 +28,31 @@ def basic_task(task_data):
     return subject.Task(**task_data)
 
 
+@pytest.fixture
+def board_data():
+    return {
+        "id": "board-123",
+        "name": "Project A",
+        "description": "Description of Project A",
+        "user_id": TestConstants.USER_ID,
+    }
+
+
 class TestTaskCreation:
     def test_creates_task_with_all_fields(self, task_data):
-        task = subject.Task.create(**task_data, icon_url=TEST_ICON_URL)
-
+        task = subject.Task.create(**task_data, icon_url=TestConstants.ICON_URL)
         assert task.id == task_data["id"]
         assert task.name == task_data["name"]
         assert task.description == task_data["description"]
-        assert task.icon_url == TEST_ICON_URL
-
-        self._assert_valid_creation_history(task, task_data, TEST_ICON_URL)
+        assert task.icon_url == TestConstants.ICON_URL
+        self.verify_creation_history(task, task_data, TestConstants.ICON_URL)
 
     def test_creates_task_without_icon_url(self, task_data):
         task = subject.Task.create(**task_data)
-
         assert task.icon_url is None
-        self._assert_valid_creation_history(task, task_data, None)
+        self.verify_creation_history(task, task_data, None)
 
-    def _assert_valid_creation_history(self, task, data, icon_url):
+    def verify_creation_history(self, task, data, icon_url):
         assert len(task.histories) == 1
         history = task.histories[0]
         assert history.task_id == data["id"]
@@ -62,22 +70,20 @@ class TestTaskCreation:
 
 class TestTaskStatusChanges:
     def test_changes_status_to_doing(self, basic_task):
-        self._assert_status_change(basic_task, subject.TaskStatus.DOING)
+        self.verify_status_change(basic_task, subject.TaskStatus.DOING)
 
     def test_changes_status_to_done(self, basic_task):
-        self._assert_status_change(basic_task, subject.TaskStatus.DONE)
+        self.verify_status_change(basic_task, subject.TaskStatus.DONE)
 
     def test_ignores_same_status_change(self, basic_task):
         initial_status = basic_task.status
         basic_task.change_status(initial_status)
-
         assert basic_task.status == initial_status
         assert len(basic_task.histories) == 0
 
-    def _assert_status_change(self, task, new_status):
+    def verify_status_change(self, task, new_status):
         old_status = task.status
         task.change_status(new_status)
-
         assert task.status == new_status
         assert len(task.histories) == 1
         history = task.histories[0]
@@ -93,97 +99,85 @@ class TestTaskUpdates:
             name="Original Task",
             description="Original Description",
             icon_url=None,
-            owner=TEST_USER_ID,
-            board_id=TEST_BOARD_ID,
+            owner=TestConstants.USER_ID,
+            board_id=TestConstants.BOARD_ID,
         )
 
     def test_updates_single_field(self, updatable_task):
         updates = {"name": "Updated Task"}
-        self._assert_task_update(updatable_task, updates)
+        self.verify_task_update(updatable_task, updates)
 
     def test_updates_multiple_fields(self, updatable_task):
         updates = {
             "name": "Updated Task",
             "description": "Updated Description",
-            "icon_url": TEST_ICON_URL,
+            "icon_url": TestConstants.ICON_URL,
         }
-        self._assert_task_update(updatable_task, updates)
+        self.verify_task_update(updatable_task, updates)
 
     def test_ignores_empty_update(self, updatable_task):
         updatable_task.update()
         assert len(updatable_task.histories) == 0
 
-    def _assert_task_update(self, task, updates):
+    def verify_task_update(self, task, updates):
         original_values = {
             "name": task.name,
             "description": task.description,
             "icon_url": task.icon_url,
         }
-
         task.update(**updates)
-
         for field, value in updates.items():
             assert getattr(task, field) == value
+        self.verify_update_history(task, original_values, updates)
 
+    def verify_update_history(self, task, original_values, updates):
         assert len(task.histories) == 1
         history = task.histories[0]
         assert history.type_of_change == domain_entity.HistoryChangeType.UPDATED
-
         for field in updates:
             expected = original_values[field]
             actual = history.previous_values[field]
-            if expected is None:
-                assert actual is None, (
-                    f"Expected None for {field}-[type({type(field)})]],"
-                    f" but got {actual}-[type({type(actual)})]"
-                )
-            else:
-                assert actual == expected, f"Mismatch in previous values for {field}"
-
+            assert actual == expected or (actual is None and expected is None)
         for field, expected in updates.items():
             actual = history.new_values[field]
-            if expected is None:
-                assert actual is None, f"Expected None for {field}, but got {actual}"
-            else:
-                assert actual == expected, f"Mismatch in new values for {field}"
+            assert actual == expected or (actual is None and expected is None)
 
 
-# Board
+class TestBoard:
+    def test_create_board_with_all_fields(self, board_data):
+        board = subject.Board.create(**board_data, icon_url=TestConstants.ICON_URL)
+        self.verify_board_creation(board, board_data, TestConstants.ICON_URL)
 
+    def test_create_board_with_minimum_fields(self, board_data):
+        board = subject.Board.create(**board_data)
+        self.verify_board_creation(board, board_data, None)
 
-def test_create_board_with_all_fields():
-    board = subject.Board.create(
-        id="1",
-        name="Project A",
-        description="Description of Project A",
-        icon_url="http://example.com/icon.png",
-        user_id="user_id",
-    )
-    assert board.id == "1"
-    assert len(board.members) == 1
+    def verify_board_creation(self, board, data, icon_url):
+        assert board.id == data["id"]
+        assert board.name == data["name"]
+        assert board.description == data["description"]
+        assert board.icon_url == icon_url
+        assert len(board.members) == 1
+        assert board.members[0].user_id == data["user_id"]
+        assert board.members[0].board_id == data["id"]
+        assert board.tasks == []
 
-    assert board.members[0].user_id == "user_id"
-    assert board.members[0].board_id == "1"
+    def test_update_board_success(self):
+        board_member = subject.BoardMember(
+            user_id="user1", board_id="board1", role=subject.RoleMemberType.ADMIN
+        )
+        board = subject.Board(
+            id="board1", name="Old Name", description="Old Description"
+        )
+        board.add_member(board_member)
 
-    assert board.name == "Project A"
-    assert board.description == "Description of Project A"
-    assert board.icon_url == "http://example.com/icon.png"
-    assert board.tasks == []
+        board.update(
+            member_that_update=board_member,
+            name="New Name",
+            description="New Description",
+            icon_url="http://new-icon-url.com",
+        )
 
-
-def test_create_board_with_minimum_fields():
-    board = subject.Board.create(
-        id="2",
-        name="Project B",
-        description="Description of Project B",
-        user_id="user_id",
-    )
-    assert board.id == "2"
-    assert board.name == "Project B"
-    assert board.description == "Description of Project B"
-    assert board.icon_url is None
-    assert board.tasks == []
-    assert len(board.members) == 1
-
-    assert board.members[0].user_id == "user_id"
-    assert board.members[0].board_id == "2"
+        assert board.name == "New Name"
+        assert board.description == "New Description"
+        assert board.icon_url == "http://new-icon-url.com"

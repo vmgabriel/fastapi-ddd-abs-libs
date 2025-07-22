@@ -293,3 +293,65 @@ class ListBoardEntrypointHttp(entrypoint_http.EntrypointHttp):
             cmd=task_commands.ListBoardCommand(),
             path_parameters=["version", "query", "user"],
         )
+
+
+# Board - Update
+
+
+class UpdateBoardEntrypointDocumentationHttp(
+    entrypoint_http.ExampleEntrypointDocumentationHttp
+):
+    def __init__(self):
+        super().__init__(
+            status_code=200,
+            description="V1 - Update Data Board",
+            example_name="Update Data of Board Board",
+            content={
+                "trace_id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+                "payload": {
+                    "id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+                    "deleted_at": None,
+                    "created_at": "2025-07-17T20:11:53.446982",
+                    "updated_at": "2025-07-17T20:11:53.446988",
+                    "is_activated": True,
+                    "name": "Updated Board",
+                    "description": "Updated Description of Board",
+                    "icon_url": None,
+                    "tasks": [],
+                    "owners": ["user_id"],
+                },
+                "errors": [],
+            },
+        )
+
+
+class UpdateBoardEntrypointHttpDocumentation(
+    entrypoint_http.EntrypointHttpDocumentation
+):
+    def __init__(self):
+        super().__init__(
+            summary="Update Board",
+            description="Update Board",
+            responses=[
+                entrypoint_http.VersionNotFoundEntrypointDocumentationHttp(),
+                UpdateBoardEntrypointDocumentationHttp(),
+            ],
+            tags=["task"],
+        )
+
+
+class UpdateBoardEntrypointHttp(entrypoint_http.EntrypointHttp):
+    def __init__(self):
+        super().__init__(
+            route="/{version}/boards/{id}",
+            name="Update Board",
+            status_code=200,
+            method=entrypoint_model.HttpStatusType.PUT,
+            documentation=UpdateBoardEntrypointHttpDocumentation(),
+            security=entrypoint_model.EntrypointSecurity(
+                require_security=True,
+                audiences=["board:update"],
+            ),
+            cmd=task_commands.UpdateBoardCommand(),
+            path_parameters=["version", "id", "user"],
+        )

@@ -6,6 +6,7 @@ from typing import Dict
 import pydantic
 
 from src.domain.models import entity as domain_entity
+from src.domain.models import exceptions as domain_exceptions
 from src.domain.models import repository as domain_repository
 
 
@@ -162,6 +163,15 @@ class BoardMember(pydantic.BaseModel):
             other, "user_id", ""
         ) and self.board_id == getattr(other, "board_id", "")
 
+    def update_role(self, role: RoleMemberType) -> None:
+        self.role = role
+
+
+class IsNotMemberofBoardError(domain_exceptions.CustomException): ...  # noqa: E701
+
+
+class NotAdminOfBoardError(domain_exceptions.CustomException): ...  # noqa: E701
+
 
 class Board(domain_repository.RepositoryData):
     name: str
@@ -169,6 +179,12 @@ class Board(domain_repository.RepositoryData):
     icon_url: str | None = None
     tasks: list[Task] = pydantic.Field(default_factory=list)
     members: list[BoardMember] = pydantic.Field(default_factory=list)
+
+    def get_member_by_user_id(self, user_id: str) -> BoardMember:
+        for member in self.members:
+            if member.user_id == user_id:
+                return member
+        raise IsNotMemberofBoardError(f"Member {user_id} not found")
 
     def is_member(self, member: BoardMember) -> bool:
         return any(
@@ -198,3 +214,37 @@ class Board(domain_repository.RepositoryData):
 
     def remove_member(self, member: BoardMember) -> None:
         self.members.remove(member)
+
+    def update_role_member(self, user_id: str, role: RoleMemberType) -> None:
+        member = self.get_member_by_user_id(user_id=user_id)
+        if member.role == role:
+            return
+        member.update_role(role=role)
+
+    def update(
+        self,
+        member_that_update: BoardMember,
+        name: str | None = None,
+        description: str | None = None,
+        icon_url: str | None = None,
+    ) -> None:
+        if name is None and description is None and icon_url is None:
+            return
+
+        if not self.is_member(member_that_update):
+            raise IsNotMemberofBoardError(
+                f"Member {member_that_update.user_id} not in board {self.id}"
+            )
+
+        if (
+            self.get_member_by_user_id(member_that_update.user_id).role
+            != RoleMemberType.ADMIN
+        ):
+            raise NotAdminOfBoardError("Only Admin can update board")
+
+        if name is not None:
+            self.name = name
+        if description is not None:
+            self.description = description
+        if icon_url is not None:
+            self.icon_url = icon_url
