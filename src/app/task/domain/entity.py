@@ -180,16 +180,20 @@ class Board(domain_repository.RepositoryData):
     tasks: list[Task] = pydantic.Field(default_factory=list)
     members: list[BoardMember] = pydantic.Field(default_factory=list)
 
+    def is_member(self, member: BoardMember) -> bool:
+        return any(
+            check_member.user_id == member.user_id for check_member in self.members
+        )
+
     def get_member_by_user_id(self, user_id: str) -> BoardMember:
         for member in self.members:
             if member.user_id == user_id:
                 return member
         raise IsNotMemberofBoardError(f"Member {user_id} not found")
 
-    def is_member(self, member: BoardMember) -> bool:
-        return any(
-            check_member.user_id == member.user_id for check_member in self.members
-        )
+    def can_delete(self, user_id: str) -> bool:
+        member = self.get_member_by_user_id(user_id=user_id)
+        return member.role == RoleMemberType.ADMIN
 
     @staticmethod
     def create(
@@ -248,3 +252,9 @@ class Board(domain_repository.RepositoryData):
             self.description = description
         if icon_url is not None:
             self.icon_url = icon_url
+
+    def delete(self, user_id: str) -> None:
+        if not self.can_delete(user_id=user_id):
+            raise NotAdminOfBoardError("Only Admin can delete board")
+        self.deleted_at = datetime.datetime.now()
+        self.is_activated = False

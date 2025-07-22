@@ -37,19 +37,23 @@ ROLE_PERMISSIONS: Dict[Role, List[Audience]] = {
         # Current Profile
         Audience.GET_PROFILE,
         Audience.UPDATE_PROFILE,
+        # Task
         Audience.CREATE_BOARD,
         Audience.GET_BOARD,
         Audience.GET_BOARDS,
         Audience.UPDATE_BOARD,
+        Audience.DELETE_BOARD,
     ],
     Role.CLIENT: [
         # Current Profile
         Audience.GET_PROFILE,
         Audience.UPDATE_PROFILE,
+        # Task
         Audience.CREATE_BOARD,
         Audience.GET_BOARD,
         Audience.GET_BOARDS,
         Audience.UPDATE_BOARD,
+        Audience.DELETE_BOARD,
     ],
 }
 

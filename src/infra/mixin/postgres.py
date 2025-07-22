@@ -1,4 +1,5 @@
 import abc
+import datetime
 import functools
 from typing import Any, Generator, Iterable, List, Tuple, cast
 
@@ -234,10 +235,14 @@ class PostgresDeleterMixin(mixin.DeleterMixin):
         self._session.atomic_execute(
             query=_DELETE_DEFAULT.format(
                 self.repository_persistence.table_name,
-                "is_active = ?",
+                "deleted_at = %s, is_activated = %s",
                 id_filter_declaration.to_definition(),
             ),
-            params=("false", cast(str, id_filter_declaration.get_values())),
+            params=(
+                datetime.datetime.now().isoformat(),
+                "false",
+                cast(str, id_filter_declaration.get_values()),
+            ),
         )
 
 

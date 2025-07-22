@@ -305,7 +305,7 @@ class UpdateBoardEntrypointDocumentationHttp(
         super().__init__(
             status_code=200,
             description="V1 - Update Data Board",
-            example_name="Update Data of Board Board",
+            example_name="Update Data of Board",
             content={
                 "trace_id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
                 "payload": {
@@ -353,5 +353,73 @@ class UpdateBoardEntrypointHttp(entrypoint_http.EntrypointHttp):
                 audiences=["board:update"],
             ),
             cmd=task_commands.UpdateBoardCommand(),
+            path_parameters=["version", "id", "user"],
+        )
+
+
+# Board - Delete
+
+
+class DeleteBoardEntrypointDocumentationHttp(
+    entrypoint_http.ExampleEntrypointDocumentationHttp
+):
+    def __init__(self):
+        super().__init__(
+            status_code=200,
+            description="V1 - Delete Board",
+            example_name="Delete Board",
+            content={
+                "trace_id": "c4174093-63ad-4447-ad3e-73b04218c341",
+                "payload": {
+                    "id": "1fa85f64-5717-4562-b3fc-2c963f66afa6",
+                    "deleted_at": "2025-07-22T11:53:00.730519",
+                    "created_at": "2025-07-22T11:52:50.441042",
+                    "updated_at": "2025-07-22T11:52:50.441048",
+                    "is_activated": False,
+                    "name": "New Board",
+                    "description": "Description of That Board",
+                    "icon_url": None,
+                    "tasks": [],
+                    "members": [
+                        {
+                            "user_id": "c1f9cf0e-1d35-421c-9ba0-050c280d78b3",
+                            "board_id": "1fa85f64-5717-4562-b3fc-2c963f66afa6",
+                            "role": "admin",
+                        }
+                    ],
+                },
+                "errors": [],
+            },
+        )
+
+
+class DeleteBoardEntrypointHttpDocumentation(
+    entrypoint_http.EntrypointHttpDocumentation
+):
+    def __init__(self):
+        super().__init__(
+            summary="Delete Board",
+            description="Delete Board",
+            responses=[
+                entrypoint_http.VersionNotFoundEntrypointDocumentationHttp(),
+                DeleteBoardEntrypointDocumentationHttp(),
+            ],
+            tags=["task"],
+        )
+
+
+class DeleteBoardEntrypointHttp(entrypoint_http.EntrypointHttp):
+    def __init__(self):
+        super().__init__(
+            route="/{version}/boards/{id}",
+            name="Delete Board",
+            status_code=200,
+            method=entrypoint_model.HttpStatusType.DELETE,
+            documentation=DeleteBoardEntrypointHttpDocumentation(),
+            security=entrypoint_model.EntrypointSecurity(
+                require_security=True,
+                audiences=["board:delete"],
+            ),
+            cmd=task_commands.DeleteBoardCommand(),
             path_parameters=["version", "id", "user"],
         )

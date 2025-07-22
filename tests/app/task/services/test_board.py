@@ -1,4 +1,4 @@
-from unittest.mock import Mock
+from unittest.mock import MagicMock, Mock, patch
 
 import pytest
 
@@ -374,6 +374,72 @@ def test_update_nonexistent_board(mock_dependencies):
             payload=payload,
             user_id="admin-user",
             board_id="nonexistent-board-id",
+            repository_board=mock_board_repo,
+            repository_ownership=mock_ownership_repo,
+            logger=mock_logger,
+        )
+
+
+def test_delete_board_success():
+    mock_board = MagicMock(spec=entity_repository.Board)
+    mock_repository_board = MagicMock(spec=domain_repository.BoardRepository)
+    mock_repository_ownership = MagicMock(
+        spec=domain_repository.OwnerShipBoardRepository
+    )
+    mock_logger = MagicMock(spec=LogAdapter)
+
+    mock_board.id = "test_board_id"
+    mock_repository_board.get_by_id.return_value = mock_board
+    mock_board.can_delete.return_value = True
+
+    with patch("src.app.task.services.board.get_board_by_id", return_value=mock_board):
+        result = board_services.delete_board(
+            board_id="test_board_id",
+            user_id="test_user_id",
+            repository_board=mock_repository_board,
+            repository_ownership=mock_repository_ownership,
+            logger=mock_logger,
+        )
+
+    assert result == mock_board
+    mock_logger.info.assert_called_once_with("Deleting Board")
+    mock_board.delete.assert_called_once_with(user_id="test_user_id")
+    mock_repository_board.delete.assert_called_once_with(id="test_board_id")
+
+
+def test_delete_board_not_found():
+    mock_repository_board = MagicMock(spec=domain_repository.BoardRepository)
+    mock_repository_ownership = MagicMock(
+        spec=domain_repository.OwnerShipBoardRepository
+    )
+    mock_logger = MagicMock(spec=LogAdapter)
+
+    with patch("src.app.task.services.board.get_board_by_id", return_value=None):
+        with pytest.raises(ValueError, match="Board test_board_id not found"):
+            board_services.delete_board(
+                board_id="test_board_id",
+                user_id="test_user_id",
+                repository_board=mock_repository_board,
+                repository_ownership=mock_repository_ownership,
+                logger=mock_logger,
+            )
+
+
+def test_delete_board_not_admin(mock_dependencies):
+    mock_board_repo, mock_ownership_repo, mock_logger = mock_dependencies
+
+    ownership = domain_repository.OwnerShipRepositoryData(
+        id="ownership-1",
+        user_id="non-admin-user",
+        board_id="mock-board-id",
+        role=entity_repository.RoleMemberType.VIEWER,
+    )
+    mock_ownership_repo.create(ownership)
+
+    with pytest.raises(entity_repository.NotAdminOfBoardError):
+        board_services.delete_board(
+            board_id="mock-board-id",
+            user_id="non-admin-user",
             repository_board=mock_board_repo,
             repository_ownership=mock_ownership_repo,
             logger=mock_logger,

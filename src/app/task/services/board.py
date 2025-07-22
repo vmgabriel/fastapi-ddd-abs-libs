@@ -149,7 +149,7 @@ def update_board(
     repository_board: domain_repository.BoardRepository,
     repository_ownership: domain_repository.OwnerShipBoardRepository,
     logger: log_model.LogAdapter,
-):
+) -> entity_domain.Board:
     entity_board_domain = get_board_by_id(
         repository_board=repository_board,
         repository_ownership=repository_ownership,
@@ -169,5 +169,29 @@ def update_board(
     )
 
     repository_board.update(id=board_id, to_update=entity_board_domain)
+
+    return entity_board_domain
+
+
+def delete_board(
+    board_id: str,
+    user_id: str,
+    repository_board: domain_repository.BoardRepository,
+    repository_ownership: domain_repository.OwnerShipBoardRepository,
+    logger: log_model.LogAdapter,
+) -> entity_domain.Board:
+    entity_board_domain = get_board_by_id(
+        repository_board=repository_board,
+        repository_ownership=repository_ownership,
+        id=board_id,
+    )
+
+    if not entity_board_domain:
+        raise ValueError(f"Board {board_id} not found")
+    logger.info("Deleting Board")
+
+    entity_board_domain.delete(user_id=user_id)
+
+    repository_board.delete(id=board_id)
 
     return entity_board_domain

@@ -24,7 +24,7 @@ v0.2.0
     - [X] Create Board
     - [X] Get With Details of Tasks and Members for Board
     - [X] Adjust Get By ID for Board Details
-    - [ ] Update Board Data
+    - [X] Update Board Data
     - [ ] Delete Board Data
 - [ ] Global Backlog
     - [ ] Recovery Password
