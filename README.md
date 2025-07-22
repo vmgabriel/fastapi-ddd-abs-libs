@@ -26,7 +26,13 @@ v0.2.0
     - [X] Adjust Get By ID for Board Details
     - [X] Update Board Data
     - [X] Delete Board Data
-    - [ ] Not Show in Get By ID - List - Deleted Board
+    - [X] Not Show in Get By ID - List - Deleted Board
+    - [ ] Add Member in Board
+    - [ ] Remove Member in Board
+    - [ ] Modify Member Role in Board
+    - [ ] Get List of Task for each Board
+    - [ ] Create Task and Save History
+    - [ ] Get By ID Task And Get TaskHistory
 - [ ] Global Backlog
     - [ ] Recovery Password
     - [ ] List of Users

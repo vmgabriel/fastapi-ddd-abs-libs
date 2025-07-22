@@ -4,7 +4,7 @@ from typing import cast
 import pydantic
 
 from src.app.security import domain as domain_security
-from src.domain.models import repository as repository_model
+from src.app.shared.services.user import find_user_by_id, find_user_by_username
 from src.domain.services import user as service_user
 from src.infra.jwt import model as jwt_model
 from src.infra.jwt.model import RefreshAuthUser
@@ -40,23 +40,6 @@ _INVALID_REFRESH_AUTHENTICATION = AuthenticationResponse(
 )
 
 
-def _find_user_by_username(
-    username: str,
-    user_repository: domain_security.UserRepository,
-) -> domain_security.UserData | None:
-    return user_repository.by_username(username=username)
-
-
-def _find_user_by_id(
-    id: str,
-    user_repository: domain_security.UserRepository,
-) -> domain_security.UserData | None:
-    try:
-        return cast(domain_security.UserData | None, user_repository.get_by_id(id=id))
-    except repository_model.RepositoryNotFoundError:
-        return None
-
-
 def authenticate(
     jwt: jwt_model.AuthJWT,
     user_repository: domain_security.UserRepository,
@@ -64,7 +47,7 @@ def authenticate(
     password: pydantic.SecretStr,
     logger: log_model.LogAdapter,
 ) -> AuthenticationResponse:
-    user_data = _find_user_by_username(
+    user_data = find_user_by_username(
         username=username, user_repository=user_repository
     )
     if not user_data:
@@ -114,7 +97,7 @@ def refresh_token(
         logger.warning("Refresh Token Invalid")
         return _INVALID_REFRESH_AUTHENTICATION
 
-    user_data = _find_user_by_id(id=decoded_data.id, user_repository=user_repository)
+    user_data = find_user_by_id(id=decoded_data.id, user_repository=user_repository)
 
     if not user_data:
         return _INVALID_REFRESH_AUTHENTICATION

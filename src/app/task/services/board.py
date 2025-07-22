@@ -1,6 +1,8 @@
 import uuid
 from typing import List, cast
 
+from src.app.security import domain as domain_security
+from src.app.shared.services import user as user_service
 from src.app.task.domain import entity as entity_domain
 from src.app.task.domain import repository as domain_repository
 from src.domain.models import filter as filter_domain
@@ -60,7 +62,7 @@ def get_board_by_id(
         if not board:
             raise repository_model.RepositoryNotFoundError()
         for ownership in owners:
-            board.add_member(
+            board.inject_member(
                 member=entity_domain.BoardMember(
                     user_id=ownership.user_id,
                     board_id=ownership.board_id,
@@ -193,5 +195,48 @@ def delete_board(
     entity_board_domain.delete(user_id=user_id)
 
     repository_board.delete(id=board_id)
+
+    return entity_board_domain
+
+
+def add_member_to_board(
+    board_id: str,
+    user_to_require_change: str,
+    new_member: str,
+    repository_board: domain_repository.BoardRepository,
+    repository_ownership: domain_repository.OwnerShipBoardRepository,
+    repository_user: domain_security.UserRepository,
+    logger: log_model.LogAdapter,
+) -> entity_domain.Board:
+    entity_board_domain = get_board_by_id(
+        repository_board=repository_board,
+        repository_ownership=repository_ownership,
+        id=board_id,
+    )
+
+    if not entity_board_domain:
+        raise ValueError(f"Board {board_id} not found")
+
+    if (
+        user_service.find_user_by_id(id=new_member, user_repository=repository_user)
+        is None
+    ):
+        raise ValueError(f"User {new_member} not found")
+
+    logger.info("Add Member to Board")
+
+    entity_board_domain.add_member(
+        member=entity_domain.BoardMember(user_id=new_member, board_id=board_id),
+        member_that_update=user_to_require_change,
+    )
+
+    repository_ownership.create(
+        new=domain_repository.OwnerShipRepositoryData(
+            id=str(uuid.uuid4()),
+            board_id=board_id,
+            user_id=new_member,
+            role=entity_domain.RoleMemberType.VIEWER,
+        )
+    )
 
     return entity_board_domain

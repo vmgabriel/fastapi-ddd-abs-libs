@@ -2,9 +2,11 @@ from unittest.mock import MagicMock, Mock, patch
 
 import pytest
 
+from src.app.security import domain as domain_security
 from src.app.task.domain import entity as entity_repository
 from src.app.task.domain import repository as domain_repository
 from src.app.task.services import board as board_services
+from src.domain.models import repository as repository_model
 from src.domain.models.repository import RepositoryNotFoundError
 from src.infra.log.model import LogAdapter
 
@@ -58,7 +60,7 @@ class TestGetBoardById:
         )
 
         assert result == mock_board
-        mock_board.add_member.assert_called_with(
+        mock_board.inject_member.assert_called_with(
             member=entity_repository.BoardMember(
                 user_id=VALID_USER_ID,
                 board_id=VALID_BOARD_ID,
@@ -243,14 +245,12 @@ class MockOwnerShipBoardRepository(domain_repository.OwnerShipBoardRepository):
         return [o for o in self.ownerships if o.board_id == board_id]
 
     def get_by_id(self, id):
-        # Implementación simple para pruebas
         for ownership in self.ownerships:
             if ownership.id == id:
                 return ownership
         return None
 
     def get_by_user_id_and_board_id(self, user_id, board_id):
-        # Implementación simple para pruebas
         for ownership in self.ownerships:
             if ownership.user_id == user_id and ownership.board_id == board_id:
                 return ownership
@@ -270,11 +270,9 @@ class MockOwnerShipBoardRepository(domain_repository.OwnerShipBoardRepository):
         self.ownerships = [o for o in self.ownerships if o.id != id]
 
     def filter(self, criteria):
-        # Implementación simple para pruebas
         return self.ownerships
 
     def serialize(self, data):
-        # Implementación simple para pruebas
         return data
 
 
@@ -296,7 +294,7 @@ def mock_dependencies():
         user_id="admin-user",
     )
 
-    board.add_member(
+    board.inject_member(
         entity_repository.BoardMember(
             user_id="non-admin-user",
             board_id="mock-board-id",
@@ -444,3 +442,110 @@ def test_delete_board_not_admin(mock_dependencies):
             repository_ownership=mock_ownership_repo,
             logger=mock_logger,
         )
+
+
+class BoardTestBase:
+    BOARD_ID = "test-board-id"
+    ADMIN_USER_ID = "admin-user-id"
+    NEW_MEMBER_ID = "new-member-id"
+    BOARD_NAME = "Test Board"
+    BOARD_DESCRIPTION = "Test Description"
+
+    def setUp(self):
+        self.mock_board_repo = Mock(spec=domain_repository.BoardRepository)
+        self.mock_ownership_repo = Mock(spec=domain_repository.OwnerShipBoardRepository)
+        self.mock_user_repo = Mock(spec=domain_security.UserRepository)
+        self.mock_logger = Mock(spec=LogAdapter)
+
+        self.mock_user_repo.get_by_id = Mock()
+
+    def create_test_board(self, board_id=None, user_id=None):
+        """Helper method to create a test board"""
+        return entity_repository.Board.create(
+            id=board_id or self.BOARD_ID,
+            name=self.BOARD_NAME,
+            description=self.BOARD_DESCRIPTION,
+            user_id=user_id or self.ADMIN_USER_ID,
+        )
+
+    def call_add_member_to_board(self, board_id, user_to_require_change, new_member):
+        """Helper method to call the service function"""
+        return board_services.add_member_to_board(
+            board_id=board_id,
+            user_to_require_change=user_to_require_change,
+            new_member=new_member,
+            repository_board=self.mock_board_repo,
+            repository_ownership=self.mock_ownership_repo,
+            repository_user=self.mock_user_repo,
+            logger=self.mock_logger,
+        )
+
+
+class TestBoardMemberOperations(BoardTestBase):
+    def test_add_member_to_board_success(self):
+        self.setUp()
+        board = self.create_test_board()
+        self.mock_board_repo.get_by_id.return_value = board
+        self.mock_ownership_repo.get_by_board_id.return_value = []
+        self.mock_user_repo.get_by_id.return_value = self.NEW_MEMBER_ID
+
+        result = self.call_add_member_to_board(
+            self.BOARD_ID, self.ADMIN_USER_ID, self.NEW_MEMBER_ID
+        )
+        assert result is not None
+        assert result.is_member(
+            entity_repository.BoardMember(
+                user_id=self.NEW_MEMBER_ID, board_id=self.BOARD_ID
+            )
+        )
+
+    def test_add_member_to_nonexistent_board(self):
+        self.setUp()
+        nonexistent_board_id = "nonexistent-board-id"
+        # Hacer que get_by_id lance RepositoryNotFoundError
+        self.mock_board_repo.get_by_id.side_effect = (
+            repository_model.RepositoryNotFoundError()
+        )
+        self.mock_ownership_repo.get_by_board_id.return_value = []
+
+        with pytest.raises(ValueError, match=f"Board {nonexistent_board_id} not found"):
+            self.call_add_member_to_board(
+                nonexistent_board_id, self.ADMIN_USER_ID, self.NEW_MEMBER_ID
+            )
+
+    def test_add_nonexistent_member_to_board(self):
+        self.setUp()
+        nonexistent_member = "nonexistent-member-id"
+        board = self.create_test_board()
+        self.mock_board_repo.get_by_id.return_value = board
+        self.mock_ownership_repo.get_by_board_id.return_value = []
+        self.mock_user_repo.get_by_id.side_effect = (
+            repository_model.RepositoryNotFoundError()
+        )
+
+        with pytest.raises(ValueError, match=f"User {nonexistent_member} not found"):
+            self.call_add_member_to_board(
+                self.BOARD_ID, self.ADMIN_USER_ID, nonexistent_member
+            )
+
+    def test_add_existing_member_to_board(self):
+        self.setUp()
+        existing_member_id = "existing-member-id"
+        board = self.create_test_board()
+        existing_member = entity_repository.BoardMember(
+            user_id=existing_member_id,
+            board_id=self.BOARD_ID,
+            role=entity_repository.RoleMemberType.VIEWER,
+        )
+        board.inject_member(existing_member)
+        self.mock_board_repo.get_by_id.return_value = board
+        self.mock_ownership_repo.get_by_board_id.return_value = []
+        self.mock_user_repo.get_by_id.return_value = existing_member_id
+
+        with pytest.raises(
+            entity_repository.HasAlreadyIsMemberError,
+            match=f"Member {existing_member_id} already in board {self.BOARD_ID}",
+        ):
+            self.call_add_member_to_board(
+                self.BOARD_ID, self.ADMIN_USER_ID, existing_member_id
+            )

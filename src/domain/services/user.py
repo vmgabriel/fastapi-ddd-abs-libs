@@ -12,6 +12,8 @@ class Role(enum.StrEnum):
 class Audience(enum.StrEnum):
     GET_PROFILE = "profile:get"
     UPDATE_PROFILE = "profile:update"
+    CREATE_PROFILE = "profile:create"
+
     CREATE_TASK = "task:create"
     GET_TASKS = "task:get"
     UPDATE_TASK = "task:update"
@@ -21,7 +23,7 @@ class Audience(enum.StrEnum):
     GET_BOARD = "board:get"
     UPDATE_BOARD = "board:update"
     DELETE_BOARD = "board:delete"
-    CREATE_PROFILE = "profile:create"
+    ADD_MEMBER_BOARD = "board:add_member"
 
     @staticmethod
     def exists(name: str) -> bool:
@@ -43,6 +45,7 @@ ROLE_PERMISSIONS: Dict[Role, List[Audience]] = {
         Audience.GET_BOARDS,
         Audience.UPDATE_BOARD,
         Audience.DELETE_BOARD,
+        Audience.ADD_MEMBER_BOARD,
     ],
     Role.CLIENT: [
         # Current Profile
@@ -54,6 +57,7 @@ ROLE_PERMISSIONS: Dict[Role, List[Audience]] = {
         Audience.GET_BOARDS,
         Audience.UPDATE_BOARD,
         Audience.DELETE_BOARD,
+        Audience.ADD_MEMBER_BOARD,
     ],
 }
 

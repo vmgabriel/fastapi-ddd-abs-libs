@@ -423,3 +423,81 @@ class DeleteBoardEntrypointHttp(entrypoint_http.EntrypointHttp):
             cmd=task_commands.DeleteBoardCommand(),
             path_parameters=["version", "id", "user"],
         )
+
+
+# Add Member
+
+
+class AddMemberBoardEntrypointDocumentationHttp(
+    entrypoint_http.ExampleEntrypointDocumentationHttp
+):
+    def __init__(self):
+        super().__init__(
+            status_code=200,
+            description="V1 - Add Member Board",
+            example_name="Add Member Board",
+            content={
+                "trace_id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+                "payload": {
+                    "id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+                    "deleted_at": None,
+                    "created_at": "2025-07-22T17:18:58.215482",
+                    "updated_at": "2025-07-22T17:18:58.215487",
+                    "is_activated": True,
+                    "name": "My Chicken Board",
+                    "description": "Description of My Chicken Board",
+                    "icon_url": None,
+                    "tasks": [],
+                    "members": [
+                        {
+                            "user_id": "53da7e70-fb8f-4030-b81d-ed07b2335dcb",
+                            "board_id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+                            "role": "viewer",
+                        },
+                        {
+                            "user_id": "c1f9cf0e-1d35-421c-9ba0-050c280d78b3",
+                            "board_id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+                            "role": "admin",
+                        },
+                        {
+                            "user_id": "05a90ad0-1053-4181-ad1c-958c1d9eacb4",
+                            "board_id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+                            "role": "viewer",
+                        },
+                    ],
+                },
+                "errors": [],
+            },
+        )
+
+
+class AddMemberBoardEntrypointHttpDocumentation(
+    entrypoint_http.EntrypointHttpDocumentation
+):
+    def __init__(self):
+        super().__init__(
+            summary="Add Member Board",
+            description="Add Member Board",
+            responses=[
+                entrypoint_http.VersionNotFoundEntrypointDocumentationHttp(),
+                AddMemberBoardEntrypointDocumentationHttp(),
+            ],
+            tags=["task"],
+        )
+
+
+class AddMemberBoardEntrypointHttp(entrypoint_http.EntrypointHttp):
+    def __init__(self):
+        super().__init__(
+            route="/{version}/boards/{id}/members",
+            name="Add Member into Board",
+            status_code=200,
+            method=entrypoint_model.HttpStatusType.POST,
+            documentation=AddMemberBoardEntrypointHttpDocumentation(),
+            security=entrypoint_model.EntrypointSecurity(
+                require_security=True,
+                audiences=["board:add_member"],
+            ),
+            cmd=task_commands.AddMemberBoardCommand(),
+            path_parameters=["version", "id", "user"],
+        )

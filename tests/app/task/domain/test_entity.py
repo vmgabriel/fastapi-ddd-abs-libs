@@ -169,7 +169,7 @@ class TestBoard:
         board = subject.Board(
             id="board1", name="Old Name", description="Old Description"
         )
-        board.add_member(board_member)
+        board.inject_member(board_member)
 
         board.update(
             member_that_update=board_member,
@@ -181,3 +181,43 @@ class TestBoard:
         assert board.name == "New Name"
         assert board.description == "New Description"
         assert board.icon_url == "http://new-icon-url.com"
+
+
+class TestAddMember:
+    @pytest.fixture
+    def board(self):
+        return subject.Board(
+            id="board-1",
+            name="Test Board",
+            description="Sample Description",
+            icon_url="http://example.com/icon.png",
+        )
+
+    @pytest.fixture
+    def admin_member(self):
+        return subject.BoardMember(
+            user_id="admin-user", board_id="board-1", role=subject.RoleMemberType.ADMIN
+        )
+
+    @pytest.fixture
+    def regular_member(self):
+        return subject.BoardMember(
+            user_id="regular-user",
+            board_id="board-1",
+            role=subject.RoleMemberType.VIEWER,
+        )
+
+    def test_add_member_success(self, board, admin_member, regular_member):
+        board.members.append(admin_member)
+        board.add_member(regular_member, member_that_update="admin-user")
+        assert regular_member in board.members
+
+    def test_add_member_not_admin(self, board, regular_member):
+        with pytest.raises(subject.NotAdminOfBoardError):
+            board.add_member(regular_member, member_that_update="non-admin-user")
+
+    def test_add_member_already_exists(self, board, admin_member, regular_member):
+        board.members.append(admin_member)
+        board.members.append(regular_member)
+        with pytest.raises(subject.HasAlreadyIsMemberError):
+            board.add_member(regular_member, member_that_update="admin-user")

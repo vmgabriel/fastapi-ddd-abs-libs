@@ -173,6 +173,9 @@ class IsNotMemberofBoardError(domain_exceptions.CustomException): ...  # noqa: E
 class NotAdminOfBoardError(domain_exceptions.CustomException): ...  # noqa: E701
 
 
+class HasAlreadyIsMemberError(domain_exceptions.CustomException): ...  # noqa: E701
+
+
 class Board(domain_repository.RepositoryData):
     name: str
     description: str
@@ -190,6 +193,11 @@ class Board(domain_repository.RepositoryData):
             if member.user_id == user_id:
                 return member
         raise IsNotMemberofBoardError(f"Member {user_id} not found")
+
+    def is_admin(self, user_id: str) -> bool:
+        if not self.is_member(BoardMember(user_id=user_id, board_id=self.id)):
+            return False
+        return self.get_member_by_user_id(user_id).role == RoleMemberType.ADMIN
 
     def can_delete(self, user_id: str) -> bool:
         member = self.get_member_by_user_id(user_id=user_id)
@@ -213,10 +221,27 @@ class Board(domain_repository.RepositoryData):
     def add_task(self, task: Task) -> None:
         self.tasks.append(task)
 
-    def add_member(self, member: BoardMember) -> None:
+    def inject_member(self, member: BoardMember) -> None:
         self.members.append(member)
 
-    def remove_member(self, member: BoardMember) -> None:
+    def add_member(
+        self,
+        member: BoardMember,
+        member_that_update: str,
+    ) -> None:
+        if not self.is_admin(member_that_update):
+            raise NotAdminOfBoardError("Only Admin can add members")
+
+        if self.is_member(member):
+            raise HasAlreadyIsMemberError(
+                f"Member {member.user_id} already in board {self.id}"
+            )
+        self.members.append(member)
+
+    def remove_member(self, member: BoardMember, member_that_update: str) -> None:
+        if not self.is_admin(member_that_update):
+            raise NotAdminOfBoardError("Only Admin can add members")
+
         self.members.remove(member)
 
     def update_role_member(self, user_id: str, role: RoleMemberType) -> None:
