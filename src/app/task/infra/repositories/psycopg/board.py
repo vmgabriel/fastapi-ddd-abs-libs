@@ -276,6 +276,12 @@ class PostgresDetailedBoardRepository(
         self, user_id: str, criteria: filter_domain.Criteria
     ) -> filter_domain.Paginator:
         criteria.update_table("b")
+        criteria.append(
+            self._filter_builder.build(type_filter=filter_domain.FilterType.EQUAL)(
+                "b.is_activated"
+            )(True)
+        )
+
         current_filters = self._create_filters(filters=criteria.filters)
         if current_filters:
             current_filters = "WHERE " + current_filters

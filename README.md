@@ -25,7 +25,8 @@ v0.2.0
     - [X] Get With Details of Tasks and Members for Board
     - [X] Adjust Get By ID for Board Details
     - [X] Update Board Data
-    - [ ] Delete Board Data
+    - [X] Delete Board Data
+    - [ ] Not Show in Get By ID - List - Deleted Board
 - [ ] Global Backlog
     - [ ] Recovery Password
     - [ ] List of Users

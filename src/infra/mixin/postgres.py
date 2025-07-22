@@ -45,13 +45,21 @@ class PostgresGetterMixin(mixin.GetterMixin, abc.ABC):
 
     def get_by_id(self, id: str) -> repository.RepositoryData:
         id_filter_declaration = self._equal_id_filter(id)
+        just_activated_filter = self._filter_builder.build(
+            type_filter=filter.FilterType.EQUAL
+        )("is_activated")(True)
         response = self._session.atomic_execute(
             query=_SELECT_DEFAULT.format(
                 self.repository_persistence.table_name,
-                id_filter_declaration.to_definition(),
+                id_filter_declaration.to_definition()
+                + " AND "
+                + just_activated_filter.to_definition(),
             ),
             params=(
-                (cast(str, id_filter_declaration.get_values()),)
+                (
+                    cast(str, id_filter_declaration.get_values()),
+                    cast(str, just_activated_filter.get_values()),
+                )
                 if isinstance(id_filter_declaration.get_values(), str)
                 else cast(Tuple[str, ...], id_filter_declaration.get_values())
             ),
