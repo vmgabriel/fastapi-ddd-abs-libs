@@ -1,7 +1,8 @@
 import uuid
-from typing import List, cast
+from typing import cast
 
 from src.app.security import domain as domain_security
+from src.app.shared.services import common as common_service
 from src.app.shared.services import user as user_service
 from src.app.task.domain import entity as entity_domain
 from src.app.task.domain import repository as domain_repository
@@ -19,34 +20,6 @@ class UpdateBoardCommandRequest(command.CommandRequest):
 
 class CreateBoardCommandRequest(UpdateBoardCommandRequest):
     id: str | None
-
-
-def command_query_to_criteria(
-    query: command.CommandQueryRequest,
-    filter_builder: filter_domain.FilterBuilder,
-) -> filter_domain.Criteria:
-    current_filters = [
-        filter_builder.build(type_filter=filter.type)(filter.attribute)(filter.value)
-        for filter in query.get_filters()
-    ]
-    current_order_by = [
-        filter_builder.build_order(type_order=order_by.type)(order_by.attribute)
-        for order_by in query.get_order_by()
-    ]
-
-    return filter_domain.Criteria(
-        filters=cast(
-            List[
-                filter_domain.Filter
-                | filter_domain.AndFilters
-                | filter_domain.OrFilters
-            ],
-            current_filters,
-        ),
-        order_by=current_order_by,
-        page_quantity=query.limit or 30,
-        page_number=query.offset or 1,
-    )
 
 
 def get_board_by_id(
@@ -102,7 +75,8 @@ def paginate_myself_board(
     filter_builder: filter_domain.FilterBuilder,
 ) -> filter_domain.Paginator:
     return repository_view_detailed_board.filter_by_user_id(
-        user_id=user_id, criteria=command_query_to_criteria(query, filter_builder)
+        user_id=user_id,
+        criteria=common_service.command_query_to_criteria(query, filter_builder),
     )
 
 

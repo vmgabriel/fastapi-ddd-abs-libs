@@ -46,11 +46,11 @@ class EqualPostgresDefinitionFilter(filter.FilterDefinition):
 class NotEqualPostgresDefinitionFilter(filter.FilterDefinition):
 
     def to_definition(self) -> str:
-        return "{attr} != ?".format(attr=self.attribute)
+        return "{attr} != %s".format(attr=self.attribute)
 
     def get_values(self, value: Any) -> str | List[str]:
         if isinstance(value, str):
-            value = f"'{value}'"
+            value = f"{value}"
         elif isinstance(value, bool):
             value = "true" if value else "false"
         elif isinstance(value, (int, float)):
@@ -66,11 +66,11 @@ class NotEqualPostgresDefinitionFilter(filter.FilterDefinition):
 
 class LikePostgresDefinitionFilter(filter.FilterDefinition):
     def to_definition(self) -> str:
-        return "{attr} LIKE ?".format(attr=self.attribute)
+        return "{attr} LIKE %s".format(attr=self.attribute)
 
     def get_values(self, value: Any) -> str | List[str]:
         if isinstance(value, str):
-            value = f"'%{value}%'"
+            value = f"%{value}%"
         else:
             raise NotImplementedError(
                 "Definition for Type in {} is not implemented".format(
@@ -83,7 +83,7 @@ class LikePostgresDefinitionFilter(filter.FilterDefinition):
 class NotLikePostgresDefinitionFilter(filter.FilterDefinition):
 
     def to_definition(self) -> str:
-        return "{attr} NOT LIKE ?".format(attr=self.attribute)
+        return "{attr} NOT LIKE %s".format(attr=self.attribute)
 
     def get_values(self, value: Any) -> str | List[str]:
         if isinstance(value, str):
@@ -99,7 +99,7 @@ class NotLikePostgresDefinitionFilter(filter.FilterDefinition):
 
 class GreaterThanPostgresDefinitionFilter(filter.FilterDefinition):
     def to_definition(self) -> str:
-        return "{attr} > ?".format(attr=self.attribute)
+        return "{attr} > %s".format(attr=self.attribute)
 
     def get_values(self, value: Any) -> str | List[str]:
         if isinstance(value, (int, float)):
@@ -115,7 +115,7 @@ class GreaterThanPostgresDefinitionFilter(filter.FilterDefinition):
 
 class LowerThanPostgresDefinitionFilter(filter.FilterDefinition):
     def to_definition(self) -> str:
-        return "{attr} < ?".format(attr=self.attribute)
+        return "{attr} < %s".format(attr=self.attribute)
 
     def get_values(self, value: Any) -> str | List[str]:
         if isinstance(value, (int, float)):
@@ -131,7 +131,7 @@ class LowerThanPostgresDefinitionFilter(filter.FilterDefinition):
 
 class GreaterEqualThanPostgresDefinitionFilter(filter.FilterDefinition):
     def to_definition(self) -> str:
-        return "{attr} >= ?".format(attr=self.attribute)
+        return "{attr} >= %s".format(attr=self.attribute)
 
     def get_values(self, value: Any) -> str | List[str]:
         if isinstance(value, (int, float)):
@@ -147,7 +147,7 @@ class GreaterEqualThanPostgresDefinitionFilter(filter.FilterDefinition):
 
 class LowerEqualThanPostgresDefinitionFilter(filter.FilterDefinition):
     def to_definition(self) -> str:
-        return "{attr} <= ?".format(attr=self.attribute)
+        return "{attr} <= %s".format(attr=self.attribute)
 
     def get_values(self, value: Any) -> str | List[str]:
         if isinstance(value, (int, float)):
@@ -217,7 +217,7 @@ class NotInPostgresDefinitionFilter(filter.FilterDefinition):
 
 class BetweenPostgresDefinitionFilter(filter.FilterDefinition):
     def to_definition(self) -> str:
-        return f"{self.attribute} BETWEEN ? AND ?"
+        return f"{self.attribute} BETWEEN %s AND %s"
 
     def get_values(self, value: Any) -> str | List[str]:
         if not isinstance(value, list) or len(value) != 2:

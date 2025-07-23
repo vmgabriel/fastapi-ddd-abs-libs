@@ -1,7 +1,7 @@
 import datetime
 import enum
 import uuid
-from typing import Dict
+from typing import Any, Dict
 
 import pydantic
 
@@ -23,6 +23,13 @@ class RoleMemberType(enum.StrEnum):
     ADMIN = enum.auto()
 
 
+class PriorityType(enum.StrEnum):
+    LOW = enum.auto()
+    MEDIUM = enum.auto()
+    HIGH = enum.auto()
+    CRITICAL = enum.auto()
+
+
 class TaskHistory(domain_repository.RepositoryData):
     task_id: str
     changed_at: datetime.datetime
@@ -36,9 +43,11 @@ class Task(domain_repository.RepositoryData):
     board_id: str
     description: str
     owner: str
+    priority: PriorityType = PriorityType.LOW
     histories: list[TaskHistory] = pydantic.Field(default_factory=list)
     status: TaskStatus = TaskStatus.TODO
     icon_url: str | None = None
+    owner_data: Dict[str, Any] | None = None
 
     def require_change(self, status: TaskStatus) -> bool:
         return status is not self.status
@@ -50,6 +59,7 @@ class Task(domain_repository.RepositoryData):
         board_id: str,
         description: str,
         owner: str,
+        priority: PriorityType = PriorityType.LOW,
         icon_url: str | None = None,
     ) -> "Task":
         return Task(
@@ -59,6 +69,7 @@ class Task(domain_repository.RepositoryData):
             description=description,
             icon_url=icon_url,
             owner=owner,
+            priority=priority,
             histories=[
                 TaskHistory(
                     id=str(uuid.uuid4()),
@@ -101,8 +112,14 @@ class Task(domain_repository.RepositoryData):
         name: str | None = None,
         description: str | None = None,
         icon_url: str | None = None,
+        priority: PriorityType | None = None,
     ) -> None:
-        if name is None and description is None and icon_url is None:
+        if (
+            name is None
+            and description is None
+            and icon_url is None
+            and priority is None
+        ):
             return
         current_values: Dict[str, str | None] = {}
         if name is not None:
@@ -111,6 +128,8 @@ class Task(domain_repository.RepositoryData):
             current_values["description"] = description
         if icon_url is not None:
             current_values["icon_url"] = icon_url
+        if priority is not None:
+            current_values["priority"] = priority
 
         self.histories.append(
             TaskHistory(

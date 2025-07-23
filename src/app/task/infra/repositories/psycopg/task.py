@@ -21,11 +21,12 @@ class PostgresTaskRepository(
                 table_name=self.table_name,
                 fields=[
                     "id",
-                    "user_id",
-                    "name",
+                    "board_id",
                     "description",
+                    "owner",
                     "status",
                     "icon_url",
+                    "priority",
                     "created_at",
                     "updated_at",
                     "deleted_at",
@@ -38,6 +39,16 @@ class PostgresTaskRepository(
     def serialize(self, data: Any) -> entity_domain.Task | None:
         if not data:
             return None
+
+        owner_data = {}
+        if len(data) > 12:
+            owner_data = {
+                "user_id": data[12],
+                "username": data[15],
+                "icon_id": data[25],
+                "full_name": data[13] + " " + data[14],
+            }
+
         return entity_domain.Task(
             id=data[0],
             owner=data[1],
@@ -45,10 +56,13 @@ class PostgresTaskRepository(
             description=data[3],
             status=data[4],
             icon_url=data[5],
-            created_at=data[6],
-            updated_at=data[7],
-            deleted_at=data[8],
-            is_activated=data[9],
+            is_activated=data[6],
+            created_at=data[7],
+            updated_at=data[8],
+            deleted_at=data[9],
+            board_id=data[10],
+            priority=entity_domain.PriorityType(data[11]),
+            owner_data=owner_data,
         )
 
 

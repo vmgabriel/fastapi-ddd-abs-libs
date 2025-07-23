@@ -10,6 +10,7 @@ from src.infra.uow.model import UOW
 from .domain import repository as domain_repository
 from .domain.entity import RoleMemberType
 from .services import board as board_services
+from .services import task as task_services
 
 
 class CreateBoardCommand(command.Command):
@@ -596,4 +597,68 @@ class UpdateRoleMemberBoardCommand(command.Command):
         return command.CommandResponse(
             trace_id=cast(command.CommandRequest, self.request).trace_id,
             payload=entity_board.model_dump(),
+        )
+
+
+# Tasks
+
+
+class ListTaskCommand(command.Command):
+    logger: log_model.LogAdapter
+    repository_getter: repository_model.RepositoryGetter
+    uow: UOW
+    filter_builder: FilterBuilder
+
+    def __init__(self):
+        super().__init__(
+            requirements=[
+                "logger",
+                "repository_getter",
+                "uow",
+                "filter_builder",
+            ],
+            request_type=command.CommandRequest,
+        )
+
+    async def execute(self) -> command.CommandResponse:
+        self.logger = self._deps["logger"]
+        self.repository_getter = cast(
+            repository_model.RepositoryGetter, self._deps["repository_getter"]
+        )
+        self.uow = self._deps["uow"]
+        self.filter_builder = self._deps["filter_builder"]
+
+        if self.parameters.get("version") != "v1":
+            raise ValueError("Version not found")
+
+        user_id = self.parameters.get("user")
+        if not user_id:
+            raise ValueError("User not found")
+
+        board_id = self.parameters.get("id")
+        if not board_id:
+            raise ValueError("Board not found")
+
+        if not self.request:
+            raise ValueError("Request not found")
+
+        with self.uow.session() as session:
+            repository_task = cast(
+                domain_repository.TaskRepository,
+                self.repository_getter(
+                    repository=domain_repository.TaskRepository,
+                    session=session,
+                ),
+            )
+
+            entity_board = task_services.paginate_task_of_board(
+                board_id=board_id,
+                query=cast(command.CommandQueryRequest, self.request),
+                repository_task=repository_task,
+                filter_builder=self.filter_builder,
+            )
+
+        return command.CommandResponse(
+            trace_id=cast(command.CommandRequest, self.request).trace_id,
+            payload=getattr(entity_board, "model_dump", lambda: {})(),
         )

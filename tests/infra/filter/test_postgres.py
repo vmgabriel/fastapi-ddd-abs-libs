@@ -46,7 +46,7 @@ def test_equal_definition_filter(expected_value: Any, values: str) -> None:
 @pytest.mark.parametrize(
     "expected_value,values",
     [
-        ("test", "'test'"),
+        ("test", "test"),
         (1, "1"),
         (1.2, "1.2"),
         (True, "true"),
@@ -55,7 +55,7 @@ def test_equal_definition_filter(expected_value: Any, values: str) -> None:
 )
 def test_not_equal_definition_filter(expected_value: Any, values: str) -> None:
     expected_attribute = "test"
-    expected_definition = "{attribute} != ?".format(attribute=expected_attribute)
+    expected_definition = "{attribute} != %s".format(attribute=expected_attribute)
     definition_filter = filter_postgres.postgres_filter_builder.build(
         type_filter=filter_domain.FilterType.NOT_EQUAL
     )(expected_attribute)
@@ -72,12 +72,12 @@ def test_not_equal_definition_filter(expected_value: Any, values: str) -> None:
 @pytest.mark.parametrize(
     "expected_value,values",
     [
-        ("test", "'%test%'"),
+        ("test", "%test%"),
     ],
 )
 def test_like_definition_filter(expected_value: Any, values: str) -> None:
     expected_attribute = "test"
-    expected_definition = "{attribute} LIKE ?".format(attribute=expected_attribute)
+    expected_definition = "{attribute} LIKE %s".format(attribute=expected_attribute)
     definition_filter = filter_postgres.postgres_filter_builder.build(
         type_filter=filter_domain.FilterType.LIKE
     )(expected_attribute)
@@ -99,7 +99,7 @@ def test_like_definition_filter(expected_value: Any, values: str) -> None:
 )
 def test_not_like_definition_filter(expected_value: Any, values: str) -> None:
     expected_attribute = "test"
-    expected_definition = "{attribute} NOT LIKE ?".format(attribute=expected_attribute)
+    expected_definition = "{attribute} NOT LIKE %s".format(attribute=expected_attribute)
     definition_filter = filter_postgres.postgres_filter_builder.build(
         type_filter=filter_domain.FilterType.NOT_LIKE
     )(expected_attribute)
@@ -122,7 +122,7 @@ def test_not_like_definition_filter(expected_value: Any, values: str) -> None:
 )
 def test_greater_definition_filter(expected_value: Any, values: str) -> None:
     expected_attribute = "test"
-    expected_definition = "{attribute} > ?".format(attribute=expected_attribute)
+    expected_definition = "{attribute} > %s".format(attribute=expected_attribute)
     definition_filter = filter_postgres.postgres_filter_builder.build(
         type_filter=filter_domain.FilterType.GREATER
     )(expected_attribute)
@@ -145,7 +145,7 @@ def test_greater_definition_filter(expected_value: Any, values: str) -> None:
 )
 def test_lower_definition_filter(expected_value: Any, values: str) -> None:
     expected_attribute = "test"
-    expected_definition = "{attribute} < ?".format(attribute=expected_attribute)
+    expected_definition = "{attribute} < %s".format(attribute=expected_attribute)
     definition_filter = filter_postgres.postgres_filter_builder.build(
         type_filter=filter_domain.FilterType.LOWER
     )(expected_attribute)
@@ -168,7 +168,7 @@ def test_lower_definition_filter(expected_value: Any, values: str) -> None:
 )
 def test_greater_equal_definition_filter(expected_value: Any, values: str) -> None:
     expected_attribute = "test"
-    expected_definition = "{attribute} >= ?".format(attribute=expected_attribute)
+    expected_definition = "{attribute} >= %s".format(attribute=expected_attribute)
     definition_filter = filter_postgres.postgres_filter_builder.build(
         type_filter=filter_domain.FilterType.GREATER_EQUAL
     )(expected_attribute)
@@ -191,7 +191,7 @@ def test_greater_equal_definition_filter(expected_value: Any, values: str) -> No
 )
 def test_lower_equal_definition_filter(expected_value: Any, values: str) -> None:
     expected_attribute = "test"
-    expected_definition = "{attribute} <= ?".format(attribute=expected_attribute)
+    expected_definition = "{attribute} <= %s".format(attribute=expected_attribute)
     definition_filter = filter_postgres.postgres_filter_builder.build(
         type_filter=filter_domain.FilterType.LOWER_EQUAL
     )(expected_attribute)
@@ -262,7 +262,7 @@ def test_not_in_definition_filter() -> None:
 def test_between_definition_filter() -> None:
     expected_value = [1, 2]
     expected_attribute = "test"
-    expected_definition = "{attribute} BETWEEN ? AND ?".format(
+    expected_definition = "{attribute} BETWEEN %s AND %s".format(
         attribute=expected_attribute
     )
     definition_filter = filter_postgres.postgres_filter_builder.build(

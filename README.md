@@ -29,10 +29,11 @@ v0.2.0
     - [X] Not Show in Get By ID - List - Deleted Board
     - [X] Add Member in Board
     - [X] Remove Member in Board
-    - [ ] New Rules for Remove Member
-        - [ ] Should have least one member
-        - [ ] I shouldn't Remove Member if it's myself
-    - [ ] Modify Member Role in Board
+    - [X] New Rules for Remove Member
+        - [X] Should have least one member
+        - [X] I shouldn't Remove Member if it's myself
+    - [X] Modify Member Role in Board
+    - [ ] Add priority attribute to Task
     - [ ] Get List of Task for each Board
     - [ ] Create Task and Save History
     - [ ] Get By ID Task And Get TaskHistory
@@ -48,3 +49,7 @@ v0.2.0
         - [ ] Check of Validation for User
     - [ ] Logic for Integration installation and save security
     - [ ] Use of Email for Authenticate
+    - [ ] Notifications for User
+    - [ ] Integration of Events for background themes
+    - [ ] Revision for Entrypoint Healthcheck
+    - [ ] Revision for Entrypoint Example, maybe delete this
