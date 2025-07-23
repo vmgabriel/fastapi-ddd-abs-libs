@@ -238,8 +238,16 @@ class MockBoardRepository(domain_repository.BoardRepository):
 
 
 class MockOwnerShipBoardRepository(domain_repository.OwnerShipBoardRepository):
+
     def __init__(self):
         self.ownerships = []
+
+    def delete_by_user_id_and_board_id(self, user_id: str, board_id: str) -> None:
+        self.ownerships = [
+            o
+            for o in self.ownerships
+            if o.user_id != user_id and o.board_id != board_id
+        ]
 
     def get_by_board_id(self, board_id):
         return [o for o in self.ownerships if o.board_id == board_id]
@@ -502,7 +510,6 @@ class TestBoardMemberOperations(BoardTestBase):
     def test_add_member_to_nonexistent_board(self):
         self.setUp()
         nonexistent_board_id = "nonexistent-board-id"
-        # Hacer que get_by_id lance RepositoryNotFoundError
         self.mock_board_repo.get_by_id.side_effect = (
             repository_model.RepositoryNotFoundError()
         )

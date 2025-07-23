@@ -501,3 +501,76 @@ class AddMemberBoardEntrypointHttp(entrypoint_http.EntrypointHttp):
             cmd=task_commands.AddMemberBoardCommand(),
             path_parameters=["version", "id", "user"],
         )
+
+
+# Remove Member
+
+
+class RemoveMemberBoardEntrypointDocumentationHttp(
+    entrypoint_http.ExampleEntrypointDocumentationHttp
+):
+    def __init__(self):
+        super().__init__(
+            status_code=200,
+            description="V1 - Remove Member Board",
+            example_name="Remove Member Board",
+            content={
+                "trace_id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+                "payload": {
+                    "id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+                    "deleted_at": None,
+                    "created_at": "2025-07-22T17:18:58.215482",
+                    "updated_at": "2025-07-22T17:18:58.215487",
+                    "is_activated": True,
+                    "name": "My Chicken Board",
+                    "description": "Description of My Chicken Board",
+                    "icon_url": None,
+                    "tasks": [],
+                    "members": [
+                        {
+                            "user_id": "53da7e70-fb8f-4030-b81d-ed07b2335dcb",
+                            "board_id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+                            "role": "viewer",
+                        },
+                        {
+                            "user_id": "c1f9cf0e-1d35-421c-9ba0-050c280d78b3",
+                            "board_id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+                            "role": "admin",
+                        },
+                    ],
+                },
+                "errors": [],
+            },
+        )
+
+
+class RemoveMemberBoardEntrypointHttpDocumentation(
+    entrypoint_http.EntrypointHttpDocumentation
+):
+    def __init__(self):
+        super().__init__(
+            summary="Remove Member Board",
+            description="Remove Member Board",
+            responses=[
+                entrypoint_http.VersionNotFoundEntrypointDocumentationHttp(),
+                RemoveMemberBoardEntrypointDocumentationHttp(),
+            ],
+            tags=["task"],
+        )
+
+
+class RemoveMemberBoardEntrypointHttp(entrypoint_http.EntrypointHttp):
+    def __init__(self):
+        super().__init__(
+            route="/{version}/boards/{id}/members/remove",
+            name="Remove Member into Board",
+            status_code=200,
+            method=entrypoint_model.HttpStatusType.POST,
+            documentation=RemoveMemberBoardEntrypointHttpDocumentation(),
+            security=entrypoint_model.EntrypointSecurity(
+                require_security=True,
+                audiences=["board:remove_member"],
+            ),
+            cmd=task_commands.RemoveMemberBoardCommand(),
+            path_parameters=["version", "id", "user"],
+        )

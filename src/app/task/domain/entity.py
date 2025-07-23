@@ -242,10 +242,18 @@ class Board(domain_repository.RepositoryData):
         if not self.is_admin(member_that_update):
             raise NotAdminOfBoardError("Only Admin can add members")
 
+        if not self.is_member(member):
+            raise ValueError("I cannot remove member that not in board.")
+
         self.members.remove(member)
 
-    def update_role_member(self, user_id: str, role: RoleMemberType) -> None:
-        member = self.get_member_by_user_id(user_id=user_id)
+    def update_role_member(
+        self, member_that_update: str, member_id: str, role: RoleMemberType
+    ) -> None:
+        if not self.is_admin(member_that_update):
+            raise NotAdminOfBoardError("Only Admin can update role member.")
+
+        member = self.get_member_by_user_id(user_id=member_id)
         if member.role == role:
             return
         member.update_role(role=role)

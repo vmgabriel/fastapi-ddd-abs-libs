@@ -1,3 +1,4 @@
+import datetime
 from typing import Any, List, cast
 
 from src.app.task.domain import entity as entity_domain
@@ -152,6 +153,38 @@ class PostgresOwnerShipBoardRepository(
             List[domain_repository.OwnerShipRepositoryData], response_filter.elements
         )
 
+    def delete_by_user_id_and_board_id(self, user_id: str, board_id: str) -> None:
+        filter_builder_eq = self._filter_builder.build(
+            type_filter=filter_domain.FilterType.EQUAL
+        )
+
+        order_filter_builder_asc = self._filter_builder.build_order(
+            type_order=filter_domain.OrderType.ASC
+        )
+
+        criteria_filter = filter_domain.Criteria(
+            filters=[
+                filter_builder_eq("user_id")(user_id),
+                filter_builder_eq("board_id")(board_id),
+                filter_builder_eq("is_activated")(True),
+            ],
+            page_number=1,
+            page_quantity=200,
+            order_by=[order_filter_builder_asc("id")],
+        )
+
+        response_filter = self.filter(criteria=criteria_filter)
+        if response_filter.total == 0:
+            return None
+
+        response_filter.elements[0].is_activated = False
+        response_filter.elements[0].deleted_at = datetime.datetime.now()
+
+        self.update(
+            id=response_filter.elements[0].id, to_update=response_filter.elements[0]
+        )
+        return None
+
     def serialize(self, data: Any) -> domain_repository.OwnerShipRepositoryData | None:
         if not data:
             return None
@@ -174,7 +207,7 @@ WITH
 user_accessible_boards AS (
         SELECT DISTINCT board_id
         FROM tbl_ownership_board
-        WHERE user_id = %s
+        WHERE user_id = %s AND tbl_ownership_board.is_activated = TRUE
         {limits}
 ),
 task_status_counts AS (

@@ -12,5 +12,6 @@ entrypoints: Dict[str, List[entrypoint_model.EntrypointModel]] = {
         http_task.UpdateBoardEntrypointHttp(),
         http_task.DeleteBoardEntrypointHttp(),
         http_task.AddMemberBoardEntrypointHttp(),
+        http_task.RemoveMemberBoardEntrypointHttp(),
     ],
 }

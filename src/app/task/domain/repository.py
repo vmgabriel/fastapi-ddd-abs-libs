@@ -80,6 +80,10 @@ class OwnerShipBoardRepository(
     def get_by_board_id(self, board_id: str) -> List[OwnerShipRepositoryData]:
         raise NotImplementedError()
 
+    @abc.abstractmethod
+    def delete_by_user_id_and_board_id(self, user_id: str, board_id: str) -> None:
+        raise NotImplementedError()
+
 
 class DetailedBoardRepository(
     repository.Repository,

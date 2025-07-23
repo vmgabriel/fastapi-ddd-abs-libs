@@ -240,3 +240,34 @@ def add_member_to_board(
     )
 
     return entity_board_domain
+
+
+def remove_member_to_board(
+    board_id: str,
+    user_to_require_change: str,
+    to_remove_member: str,
+    repository_board: domain_repository.BoardRepository,
+    repository_ownership: domain_repository.OwnerShipBoardRepository,
+    logger: log_model.LogAdapter,
+) -> entity_domain.Board:
+    entity_board_domain = get_board_by_id(
+        repository_board=repository_board,
+        repository_ownership=repository_ownership,
+        id=board_id,
+    )
+
+    if not entity_board_domain:
+        raise ValueError(f"Board {board_id} not found")
+
+    logger.info("Remove Member to Board")
+
+    entity_board_domain.remove_member(
+        member=entity_domain.BoardMember(user_id=to_remove_member, board_id=board_id),
+        member_that_update=user_to_require_change,
+    )
+
+    repository_ownership.delete_by_user_id_and_board_id(
+        user_id=to_remove_member, board_id=board_id
+    )
+
+    return entity_board_domain

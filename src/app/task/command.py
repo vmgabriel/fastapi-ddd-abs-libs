@@ -436,3 +436,82 @@ class AddMemberBoardCommand(command.Command):
             trace_id=cast(command.CommandRequest, self.request).trace_id,
             payload=entity_board.model_dump(),
         )
+
+
+class RemoveMemberCommandRequest(command.CommandRequest):
+    user_id: str
+
+
+class RemoveMemberBoardCommand(command.Command):
+    logger: log_model.LogAdapter
+    repository_getter: repository_model.RepositoryGetter
+    uow: UOW
+    filter_builder: FilterBuilder
+
+    def __init__(self):
+        super().__init__(
+            requirements=[
+                "logger",
+                "repository_getter",
+                "uow",
+                "filter_builder",
+            ],
+            request_type=RemoveMemberCommandRequest,
+        )
+
+    async def execute(self) -> command.CommandResponse:
+        self.logger = self._deps["logger"]
+        self.repository_getter = cast(
+            repository_model.RepositoryGetter, self._deps["repository_getter"]
+        )
+        self.uow = self._deps["uow"]
+        self.filter_builder = self._deps["filter_builder"]
+
+        self.logger.info("Executing AddMemberBoardCommand")
+
+        if self.parameters.get("version") != "v1":
+            raise ValueError("Version not found")
+
+        user_id = self.parameters.get("user")
+        if not user_id:
+            raise ValueError("User not found")
+
+        board_id = self.parameters.get("id")
+        if not board_id:
+            raise ValueError("Board not found")
+
+        if not self.request:
+            raise ValueError("Request not found")
+
+        with self.uow.session() as session:
+            repository_board = cast(
+                domain_repository.BoardRepository,
+                self.repository_getter(
+                    repository=domain_repository.BoardRepository,
+                    session=session,
+                ),
+            )
+            repository_ownership = cast(
+                domain_repository.OwnerShipBoardRepository,
+                self.repository_getter(
+                    repository=domain_repository.OwnerShipBoardRepository,
+                    session=session,
+                ),
+            )
+
+            current_request = cast(RemoveMemberCommandRequest, self.request)
+
+            entity_board = board_services.remove_member_to_board(
+                user_to_require_change=user_id,
+                board_id=board_id,
+                to_remove_member=current_request.user_id,
+                repository_board=repository_board,
+                repository_ownership=repository_ownership,
+                logger=self.logger,
+            )
+            session.commit()
+
+        return command.CommandResponse(
+            trace_id=cast(command.CommandRequest, self.request).trace_id,
+            payload=entity_board.model_dump(),
+        )

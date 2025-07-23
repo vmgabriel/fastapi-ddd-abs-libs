@@ -24,6 +24,7 @@ class Audience(enum.StrEnum):
     UPDATE_BOARD = "board:update"
     DELETE_BOARD = "board:delete"
     ADD_MEMBER_BOARD = "board:add_member"
+    REMOVE_MEMBER_BOARD = "board:remove_member"
 
     @staticmethod
     def exists(name: str) -> bool:
@@ -46,6 +47,7 @@ ROLE_PERMISSIONS: Dict[Role, List[Audience]] = {
         Audience.UPDATE_BOARD,
         Audience.DELETE_BOARD,
         Audience.ADD_MEMBER_BOARD,
+        Audience.REMOVE_MEMBER_BOARD,
     ],
     Role.CLIENT: [
         # Current Profile
@@ -58,6 +60,7 @@ ROLE_PERMISSIONS: Dict[Role, List[Audience]] = {
         Audience.UPDATE_BOARD,
         Audience.DELETE_BOARD,
         Audience.ADD_MEMBER_BOARD,
+        Audience.REMOVE_MEMBER_BOARD,
     ],
 }
 

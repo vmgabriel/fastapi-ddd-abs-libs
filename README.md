@@ -27,8 +27,11 @@ v0.2.0
     - [X] Update Board Data
     - [X] Delete Board Data
     - [X] Not Show in Get By ID - List - Deleted Board
-    - [ ] Add Member in Board
-    - [ ] Remove Member in Board
+    - [X] Add Member in Board
+    - [X] Remove Member in Board
+    - [ ] New Rules for Remove Member
+        - [ ] Should have least 1 member
+        - [ ] I shouldn't Remove Member if it's myself
     - [ ] Modify Member Role in Board
     - [ ] Get List of Task for each Board
     - [ ] Create Task and Save History
@@ -36,6 +39,8 @@ v0.2.0
 - [ ] Global Backlog
     - [ ] Recovery Password
     - [ ] List of Users
+        - [ ] Getting using username like
     - [ ] Change Permissions Online
         - [ ] Allow Add/Remove/Update Audiences in roles
+        - [ ] Table Organization for Audiences
     - [ ] Validation for Logic Delete
