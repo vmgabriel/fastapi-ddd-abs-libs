@@ -30,7 +30,7 @@ v0.2.0
     - [X] Add Member in Board
     - [X] Remove Member in Board
     - [ ] New Rules for Remove Member
-        - [ ] Should have least 1 member
+        - [ ] Should have least one member
         - [ ] I shouldn't Remove Member if it's myself
     - [ ] Modify Member Role in Board
     - [ ] Get List of Task for each Board
@@ -44,3 +44,7 @@ v0.2.0
         - [ ] Allow Add/Remove/Update Audiences in roles
         - [ ] Table Organization for Audiences
     - [ ] Validation for Logic Delete
+        - [X] Check of Validation for Board
+        - [ ] Check of Validation for User
+    - [ ] Logic for Integration installation and save security
+    - [ ] Use of Email for Authenticate

@@ -3,6 +3,7 @@ from unittest.mock import MagicMock, Mock, patch
 import pytest
 
 from src.app.security import domain as domain_security
+from src.app.task.domain import entity as entity_domain
 from src.app.task.domain import entity as entity_repository
 from src.app.task.domain import repository as domain_repository
 from src.app.task.services import board as board_services
@@ -272,6 +273,14 @@ class MockOwnerShipBoardRepository(domain_repository.OwnerShipBoardRepository):
         for i, ownership in enumerate(self.ownerships):
             if ownership.id == id:
                 self.ownerships[i] = to_update
+                return
+
+    def update_role_by_user_id_and_board_id(
+        self, user_id: str, board_id: str, to_update: entity_domain.RoleMemberType
+    ) -> None:
+        for i, ownership in enumerate(self.ownerships):
+            if ownership.user_id == user_id and board_id == board_id:
+                ownership.role = to_update
                 return
 
     def delete(self, id):
@@ -556,3 +565,68 @@ class TestBoardMemberOperations(BoardTestBase):
             self.call_add_member_to_board(
                 self.BOARD_ID, self.ADMIN_USER_ID, existing_member_id
             )
+
+
+def test_update_role_in_member_success():
+    board_id = "1234"
+    user_to_require_change = "admin_user"
+    member_id = "member_user"
+    new_role = entity_repository.RoleMemberType.ADMIN
+
+    mock_board = MagicMock(spec=entity_repository.Board)
+    mock_board.update_role_member.return_value = None
+
+    repository_board = MagicMock(spec=domain_repository.BoardRepository)
+    repository_board.get_by_id.return_value = mock_board
+
+    repository_ownership = MagicMock(spec=domain_repository.OwnerShipBoardRepository)
+    repository_ownership.update_role_by_user_id_and_board_id.return_value = None
+
+    logger = MagicMock(spec=LogAdapter)
+
+    repository_board.get_by_id.return_value = mock_board
+
+    result = board_services.update_role_in_member(
+        board_id=board_id,
+        user_to_require_change=user_to_require_change,
+        member_id=member_id,
+        new_role=new_role,
+        repository_board=repository_board,
+        repository_ownership=repository_ownership,
+        logger=logger,
+    )
+
+    assert result == mock_board
+    mock_board.update_role_member.assert_called_once_with(
+        member_that_update=user_to_require_change,
+        member_id=member_id,
+        role=new_role,
+    )
+    repository_ownership.update_role_by_user_id_and_board_id.assert_called_once_with(
+        user_id=member_id, board_id=board_id, to_update=new_role
+    )
+    logger.info.assert_called_once()
+
+
+def test_update_role_in_member_board_not_found():
+    board_id = "1234"
+    user_to_require_change = "admin_user"
+    member_id = "member_user"
+    new_role = entity_repository.RoleMemberType.EDITOR
+
+    repository_board = MagicMock(spec=domain_repository.BoardRepository)
+    repository_board.get_by_id.return_value = None
+
+    repository_ownership = MagicMock(spec=domain_repository.OwnerShipBoardRepository)
+    logger = MagicMock(spec=LogAdapter)
+
+    with pytest.raises(ValueError, match=f"Board {board_id} not found"):
+        board_services.update_role_in_member(
+            board_id=board_id,
+            user_to_require_change=user_to_require_change,
+            member_id=member_id,
+            new_role=new_role,
+            repository_board=repository_board,
+            repository_ownership=repository_ownership,
+            logger=logger,
+        )

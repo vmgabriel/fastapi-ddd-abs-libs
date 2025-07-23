@@ -212,6 +212,8 @@ class PostgresUpdaterMixin(mixin.UpdaterMixin):
     def update(
         self, id: str, to_update: repository.RepositoryData
     ) -> repository.RepositoryData:
+        to_update.updated_at = datetime.datetime.now()
+
         script = _UPDATE_DEFAULT.format(
             self.repository_persistence.table_name,
             ",".join(
@@ -223,14 +225,20 @@ class PostgresUpdaterMixin(mixin.UpdaterMixin):
             ),
             "id = %s",
         )
+
+        def get_attr_value(field) -> Any:
+            return getattr(to_update, field)
+
+        params = tuple(
+            get_attr_value(field)
+            for field in self.repository_persistence.fields
+            if field != "id"
+        )
+
         self._session.atomic_execute(
             query=script,
             params=(
-                *(
-                    getattr(to_update, field)
-                    for field in self.repository_persistence.fields
-                    if field != "id"
-                ),
+                *params,
                 id,
             ),
         )

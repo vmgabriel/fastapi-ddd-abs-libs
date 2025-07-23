@@ -84,6 +84,12 @@ class OwnerShipBoardRepository(
     def delete_by_user_id_and_board_id(self, user_id: str, board_id: str) -> None:
         raise NotImplementedError()
 
+    @abc.abstractmethod
+    def update_role_by_user_id_and_board_id(
+        self, user_id: str, board_id: str, to_update: entity_domain.RoleMemberType
+    ) -> None:
+        raise NotImplementedError()
+
 
 class DetailedBoardRepository(
     repository.Repository,

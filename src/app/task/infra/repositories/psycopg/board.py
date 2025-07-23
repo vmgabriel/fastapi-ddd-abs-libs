@@ -185,6 +185,38 @@ class PostgresOwnerShipBoardRepository(
         )
         return None
 
+    def update_role_by_user_id_and_board_id(
+        self, user_id: str, board_id: str, to_update: entity_domain.RoleMemberType
+    ) -> None:
+        filter_builder_eq = self._filter_builder.build(
+            type_filter=filter_domain.FilterType.EQUAL
+        )
+
+        order_filter_builder_asc = self._filter_builder.build_order(
+            type_order=filter_domain.OrderType.ASC
+        )
+
+        criteria_filter = filter_domain.Criteria(
+            filters=[
+                filter_builder_eq("user_id")(user_id),
+                filter_builder_eq("board_id")(board_id),
+                filter_builder_eq("is_activated")(True),
+            ],
+            page_number=1,
+            page_quantity=200,
+            order_by=[order_filter_builder_asc("id")],
+        )
+
+        response_filter = self.filter(criteria=criteria_filter)
+        if response_filter.total == 0:
+            return None
+
+        updater = response_filter.elements[0]
+        updater.role = to_update
+
+        self.update(id=response_filter.elements[0].id, to_update=updater)
+        return None
+
     def serialize(self, data: Any) -> domain_repository.OwnerShipRepositoryData | None:
         if not data:
             return None

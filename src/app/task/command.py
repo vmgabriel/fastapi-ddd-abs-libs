@@ -8,6 +8,7 @@ from src.infra.log import model as log_model
 from src.infra.uow.model import UOW
 
 from .domain import repository as domain_repository
+from .domain.entity import RoleMemberType
 from .services import board as board_services
 
 
@@ -467,7 +468,7 @@ class RemoveMemberBoardCommand(command.Command):
         self.uow = self._deps["uow"]
         self.filter_builder = self._deps["filter_builder"]
 
-        self.logger.info("Executing AddMemberBoardCommand")
+        self.logger.info("Executing RemoveMemberBoardCommand")
 
         if self.parameters.get("version") != "v1":
             raise ValueError("Version not found")
@@ -505,6 +506,87 @@ class RemoveMemberBoardCommand(command.Command):
                 user_to_require_change=user_id,
                 board_id=board_id,
                 to_remove_member=current_request.user_id,
+                repository_board=repository_board,
+                repository_ownership=repository_ownership,
+                logger=self.logger,
+            )
+            session.commit()
+
+        return command.CommandResponse(
+            trace_id=cast(command.CommandRequest, self.request).trace_id,
+            payload=entity_board.model_dump(),
+        )
+
+
+class UpdateRoleMemberCommandRequest(command.CommandRequest):
+    user_id: str
+    role: RoleMemberType
+
+
+class UpdateRoleMemberBoardCommand(command.Command):
+    logger: log_model.LogAdapter
+    repository_getter: repository_model.RepositoryGetter
+    uow: UOW
+    filter_builder: FilterBuilder
+
+    def __init__(self):
+        super().__init__(
+            requirements=[
+                "logger",
+                "repository_getter",
+                "uow",
+                "filter_builder",
+            ],
+            request_type=UpdateRoleMemberCommandRequest,
+        )
+
+    async def execute(self) -> command.CommandResponse:
+        self.logger = self._deps["logger"]
+        self.repository_getter = cast(
+            repository_model.RepositoryGetter, self._deps["repository_getter"]
+        )
+        self.uow = self._deps["uow"]
+        self.filter_builder = self._deps["filter_builder"]
+
+        self.logger.info("Executing UpdateRoleMemberBoardCommand")
+
+        if self.parameters.get("version") != "v1":
+            raise ValueError("Version not found")
+
+        user_id = self.parameters.get("user")
+        if not user_id:
+            raise ValueError("User not found")
+
+        board_id = self.parameters.get("id")
+        if not board_id:
+            raise ValueError("Board not found")
+
+        if not self.request:
+            raise ValueError("Request not found")
+
+        with self.uow.session() as session:
+            repository_board = cast(
+                domain_repository.BoardRepository,
+                self.repository_getter(
+                    repository=domain_repository.BoardRepository,
+                    session=session,
+                ),
+            )
+            repository_ownership = cast(
+                domain_repository.OwnerShipBoardRepository,
+                self.repository_getter(
+                    repository=domain_repository.OwnerShipBoardRepository,
+                    session=session,
+                ),
+            )
+
+            current_request = cast(UpdateRoleMemberCommandRequest, self.request)
+
+            entity_board = board_services.update_role_in_member(
+                user_to_require_change=user_id,
+                board_id=board_id,
+                member_id=current_request.user_id,
+                new_role=current_request.role,
                 repository_board=repository_board,
                 repository_ownership=repository_ownership,
                 logger=self.logger,

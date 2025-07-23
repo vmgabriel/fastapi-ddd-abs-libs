@@ -271,3 +271,36 @@ def remove_member_to_board(
     )
 
     return entity_board_domain
+
+
+def update_role_in_member(
+    board_id: str,
+    user_to_require_change: str,
+    member_id: str,
+    new_role: entity_domain.RoleMemberType,
+    repository_board: domain_repository.BoardRepository,
+    repository_ownership: domain_repository.OwnerShipBoardRepository,
+    logger: log_model.LogAdapter,
+) -> entity_domain.Board:
+    entity_board_domain = get_board_by_id(
+        repository_board=repository_board,
+        repository_ownership=repository_ownership,
+        id=board_id,
+    )
+
+    if not entity_board_domain:
+        raise ValueError(f"Board {board_id} not found")
+
+    logger.info(f"Update Role {new_role} in Member {member_id} with board {board_id}")
+
+    entity_board_domain.update_role_member(
+        member_that_update=user_to_require_change,
+        member_id=member_id,
+        role=new_role,
+    )
+
+    repository_ownership.update_role_by_user_id_and_board_id(
+        user_id=member_id, board_id=board_id, to_update=new_role
+    )
+
+    return entity_board_domain

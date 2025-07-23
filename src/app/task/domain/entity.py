@@ -245,6 +245,9 @@ class Board(domain_repository.RepositoryData):
         if not self.is_member(member):
             raise ValueError("I cannot remove member that not in board.")
 
+        if member.user_id == member_that_update:
+            raise ValueError("I cannot remove myself")
+
         self.members.remove(member)
 
     def update_role_member(
