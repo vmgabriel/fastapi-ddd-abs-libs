@@ -1,7 +1,8 @@
-from typing import Any
+from typing import Any, List, cast
 
 from src.app.task.domain import entity as entity_domain
 from src.app.task.domain import repository as domain_repository
+from src.domain.models import filter as filter_domain
 from src.domain.models import repository
 from src.infra.mixin import postgres
 
@@ -22,8 +23,9 @@ class PostgresTaskRepository(
                 fields=[
                     "id",
                     "board_id",
+                    "name",
                     "description",
-                    "owner",
+                    "user_id",
                     "status",
                     "icon_url",
                     "priority",
@@ -94,6 +96,28 @@ class PostgresHistoryTaskRepository(
             )
         )
         super().__init__(*args, **kwargs)
+
+    def get_by_task_id(self, task_id: str) -> List[entity_domain.TaskHistory]:
+        filter_builder_eq = self._filter_builder.build(
+            type_filter=filter_domain.FilterType.EQUAL
+        )
+        order_filter_builder_asc = self._filter_builder.build_order(
+            type_order=filter_domain.OrderType.ASC
+        )
+
+        criteria_filter = filter_domain.Criteria(
+            filters=[
+                filter_builder_eq("task_id")(task_id),
+                filter_builder_eq("is_activated")(True),
+            ],
+            page_number=1,
+            page_quantity=200,
+            order_by=[order_filter_builder_asc("id")],
+        )
+
+        response_filter = self.filter(criteria=criteria_filter)
+
+        return cast(List[entity_domain.TaskHistory], response_filter.elements)
 
     def serialize(self, data: Any) -> entity_domain.TaskHistory | None:
         if not data:

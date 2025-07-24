@@ -1,7 +1,8 @@
 import abc
 import datetime
 import functools
-from typing import Any, Generator, Iterable, List, Tuple, cast
+import json
+from typing import Any, Dict, Generator, Iterable, List, Tuple, cast
 
 import pydantic
 
@@ -190,6 +191,8 @@ class PostgresCreatorMixin(mixin.CreatorMixin):
                 return field.get_secret_value()
             if isinstance(field, list):
                 return ",".join(field)
+            if isinstance(field, Dict):
+                return json.dumps(field)
             return field
 
         get_fields = (

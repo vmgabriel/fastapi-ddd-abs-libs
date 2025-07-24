@@ -52,6 +52,10 @@ class Task(domain_repository.RepositoryData):
     def require_change(self, status: TaskStatus) -> bool:
         return status is not self.status
 
+    @property
+    def user_id(self) -> str:
+        return self.owner
+
     @staticmethod
     def create(
         id: str,
@@ -80,12 +84,17 @@ class Task(domain_repository.RepositoryData):
                         "name": name,
                         "description": description,
                         "icon_url": icon_url,
-                        "owner": owner,
+                        "user_id": owner,
+                        "priority": priority,
+                        "board_id": board_id,
                     },
                     changed_at=datetime.datetime.now(),
                 )
             ],
         )
+
+    def inject_history(self, history: TaskHistory) -> None:
+        self.histories.append(history)
 
     def change_status(self, status: TaskStatus) -> None:
         if status is self.status:
@@ -192,6 +201,9 @@ class IsNotMemberofBoardError(domain_exceptions.CustomException): ...  # noqa: E
 class NotAdminOfBoardError(domain_exceptions.CustomException): ...  # noqa: E701
 
 
+class IsNotEditorOfBoardError(domain_exceptions.CustomException): ...  # noqa: E701
+
+
 class HasAlreadyIsMemberError(domain_exceptions.CustomException): ...  # noqa: E701
 
 
@@ -212,6 +224,11 @@ class Board(domain_repository.RepositoryData):
             if member.user_id == user_id:
                 return member
         raise IsNotMemberofBoardError(f"Member {user_id} not found")
+
+    def is_editor(self, user_id: str) -> bool:
+        member = self.get_member_by_user_id(user_id=user_id)
+        allowed_roles = [RoleMemberType.EDITOR, RoleMemberType.ADMIN]
+        return member.role in allowed_roles
 
     def is_admin(self, user_id: str) -> bool:
         if not self.is_member(BoardMember(user_id=user_id, board_id=self.id)):
@@ -237,7 +254,9 @@ class Board(domain_repository.RepositoryData):
             ],
         )
 
-    def add_task(self, task: Task) -> None:
+    def add_task(self, task: Task, member_that_insert: str) -> None:
+        if not self.is_editor(member_that_insert):
+            raise IsNotEditorOfBoardError("Only Editor can add task")
         self.tasks.append(task)
 
     def inject_member(self, member: BoardMember) -> None:

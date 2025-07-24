@@ -20,6 +20,7 @@ def task_data():
         "description": "A sample task for testing",
         "board_id": TestConstants.BOARD_ID,
         "owner": TestConstants.USER_ID,
+        "priority": subject.PriorityType.LOW,
     }
 
 
@@ -45,6 +46,8 @@ class TestTaskCreation:
         assert task.name == task_data["name"]
         assert task.description == task_data["description"]
         assert task.icon_url == TestConstants.ICON_URL
+        assert task.status == subject.TaskStatus.TODO
+        assert task.priority == subject.PriorityType.LOW
         self.verify_creation_history(task, task_data, TestConstants.ICON_URL)
 
     def test_creates_task_without_icon_url(self, task_data):
@@ -60,11 +63,13 @@ class TestTaskCreation:
         assert isinstance(history.id, str) and history.id
         assert isinstance(history.changed_at, datetime.datetime)
         assert history.new_values == {
+            "board_id": data["board_id"],
+            "priority": data["priority"],
             "id": data["id"],
             "name": data["name"],
             "description": data["description"],
             "icon_url": icon_url,
-            "owner": data["owner"],
+            "user_id": data["owner"],
         }
 
 

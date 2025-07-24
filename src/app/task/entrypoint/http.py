@@ -744,3 +744,54 @@ class ListTaskEntrypointHttp(entrypoint_http.EntrypointHttp):
             cmd=task_commands.ListTaskCommand(),
             path_parameters=["version", "id", "query", "user"],
         )
+
+
+# Create Task
+
+
+class CreateTaskEntrypointDocumentationHttp(
+    entrypoint_http.ExampleEntrypointDocumentationHttp
+):
+    def __init__(self):
+        super().__init__(
+            status_code=200,
+            description="V1 - Create Task",
+            example_name="Create Task",
+            content={
+                "trace_id": "025712b3-4be6-4999-b3ec-d1b58440d47f",
+                "payload": {"message": "ok"},
+                "errors": [],
+            },
+        )
+
+
+class CreateTaskEntrypointHttpDocumentation(
+    entrypoint_http.EntrypointHttpDocumentation
+):
+    def __init__(self):
+        super().__init__(
+            summary="Create Task",
+            description="Create Task",
+            responses=[
+                entrypoint_http.VersionNotFoundEntrypointDocumentationHttp(),
+                CreateTaskEntrypointDocumentationHttp(),
+            ],
+            tags=["task"],
+        )
+
+
+class CreateTaskEntrypointHttp(entrypoint_http.EntrypointHttp):
+    def __init__(self):
+        super().__init__(
+            route="/{version}/boards/{id}/tasks",
+            name="Create Tasks",
+            status_code=200,
+            method=entrypoint_model.HttpStatusType.POST,
+            documentation=CreateTaskEntrypointHttpDocumentation(),
+            security=entrypoint_model.EntrypointSecurity(
+                require_security=True,
+                audiences=["task:create"],
+            ),
+            cmd=task_commands.CreateTaskCommand(),
+            path_parameters=["version", "id", "user"],
+        )

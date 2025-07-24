@@ -4,7 +4,39 @@ from src.app.shared.services import common as common_service
 from src.app.task.domain import entity as entity_domain
 from src.app.task.domain import repository as domain_repository
 from src.domain.models import filter as filter_domain
+from src.domain.models import repository as repository_model
 from src.domain.services import command
+from src.infra.log import model as log_model
+
+from . import board as services_board
+
+
+def get_histories_by_task_id(
+    task_id: str,
+    repository_task_history: domain_repository.TaskHistoryRepository,
+) -> List[entity_domain.TaskHistory]:
+    return repository_task_history.get_by_task_id(task_id=task_id)
+
+
+def get_task_by_id(
+    id: str,
+    repository_task: domain_repository.TaskRepository,
+    repository_task_history: domain_repository.TaskHistoryRepository,
+) -> entity_domain.Task | None:
+    try:
+        task = cast(entity_domain.Task, repository_task.get_by_id(id=id))
+        histories = get_histories_by_task_id(
+            task_id=id, repository_task_history=repository_task_history
+        )
+        if not task:
+            raise repository_model.RepositoryNotFoundError(
+                f"Not Found Task With ID {id}"
+            )
+        for history in histories:
+            task.inject_history(history=history)
+        return cast(entity_domain.Task | None, task)
+    except repository_model.RepositoryNotFoundError:
+        return None
 
 
 def paginate_task_of_board(
@@ -43,3 +75,58 @@ def paginate_task_of_board(
     return repository_task.filter(
         criteria=criteria_task, joins=[join_with_user, join_user_with_profile]
     )
+
+
+class UpdateTaskCommandRequest(command.CommandRequest):
+    name: str
+    description: str
+    priority: entity_domain.PriorityType
+    icon_url: str | None = None
+
+
+class CreateTaskCommandRequest(UpdateTaskCommandRequest):
+    id: str | None
+
+
+def create_task(
+    payload: CreateTaskCommandRequest,
+    user_id: str,
+    board_id: str,
+    logger: log_model.LogAdapter,
+    repository_task: domain_repository.TaskRepository,
+    repository_task_history: domain_repository.TaskHistoryRepository,
+    repository_board: domain_repository.BoardRepository,
+    repository_ownership: domain_repository.OwnerShipBoardRepository,
+) -> entity_domain.Task:
+    entity_task_domain = get_task_by_id(
+        repository_task=repository_task,
+        repository_task_history=repository_task_history,
+        id=cast(str, payload.id),
+    )
+    if entity_task_domain:
+        raise ValueError("Task already exists")
+
+    entity_board_domain = services_board.get_board_by_id(
+        id=board_id,
+        repository_board=repository_board,
+        repository_ownership=repository_ownership,
+    )
+    if not entity_board_domain:
+        raise ValueError("Board not found")
+
+    logger.info("Creating Task")
+
+    new_entity_task = entity_domain.Task.create(
+        id=str(payload.id),
+        name=payload.name,
+        description=payload.description,
+        owner=user_id,
+        board_id=board_id,
+        priority=payload.priority,
+        icon_url=payload.icon_url,
+    )
+    entity_board_domain.add_task(task=new_entity_task, member_that_insert=user_id)
+
+    repository_task.create(new=new_entity_task)
+    repository_task_history.create(new=new_entity_task.histories[0])
+    return new_entity_task

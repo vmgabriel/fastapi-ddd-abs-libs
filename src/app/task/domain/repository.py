@@ -51,6 +51,10 @@ class TaskHistoryRepository(
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
 
+    @abc.abstractmethod
+    def get_by_task_id(self, task_id: str) -> List[entity_domain.TaskHistory]:
+        raise NotImplementedError()
+
 
 class OwnerShipRepositoryData(repository.RepositoryData):
     user_id: str
