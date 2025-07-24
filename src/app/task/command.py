@@ -750,3 +750,71 @@ class CreateTaskCommand(command.Command):
             trace_id=cast(command.CommandRequest, self.request).trace_id,
             payload=getattr(entity_task, "model_dump", lambda: {})(),
         )
+
+
+class GetByIDTaskCommand(command.Command):
+    logger: log_model.LogAdapter
+    repository_getter: repository_model.RepositoryGetter
+    uow: UOW
+    filter_builder: FilterBuilder
+
+    def __init__(self):
+        super().__init__(
+            requirements=[
+                "logger",
+                "repository_getter",
+                "uow",
+                "filter_builder",
+            ],
+            request_type=command.CommandRequest,
+        )
+
+    async def execute(self) -> command.CommandResponse:
+        self.logger = self._deps["logger"]
+        self.repository_getter = cast(
+            repository_model.RepositoryGetter, self._deps["repository_getter"]
+        )
+        self.uow = self._deps["uow"]
+        self.filter_builder = self._deps["filter_builder"]
+
+        if self.parameters.get("version") != "v1":
+            raise ValueError("Version not found")
+
+        user_id = self.parameters.get("user")
+        if not user_id:
+            raise ValueError("User not found")
+
+        task_id = self.parameters.get("id")
+        if not task_id:
+            raise ValueError("Task not found")
+
+        if not self.request:
+            raise ValueError("Request not found")
+
+        with self.uow.session() as session:
+            repository_task = cast(
+                domain_repository.TaskRepository,
+                self.repository_getter(
+                    repository=domain_repository.TaskRepository,
+                    session=session,
+                ),
+            )
+            repository_history = cast(
+                domain_repository.TaskHistoryRepository,
+                self.repository_getter(
+                    repository=domain_repository.TaskHistoryRepository,
+                    session=session,
+                ),
+            )
+
+            entity_task = task_services.get_detailed_task_by_id(
+                id=task_id,
+                repository_task=repository_task,
+                repository_task_history=repository_history,
+                filter_builder=self.filter_builder,
+            )
+
+        return command.CommandResponse(
+            trace_id=cast(command.CommandRequest, self.request).trace_id,
+            payload=getattr(entity_task, "model_dump", lambda: {})(),
+        )

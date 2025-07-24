@@ -16,5 +16,6 @@ entrypoints: Dict[str, List[entrypoint_model.EntrypointModel]] = {
         http_task.UpdateRoleMemberBoardEntrypointHttp(),
         http_task.ListTaskEntrypointHttp(),
         http_task.CreateTaskEntrypointHttp(),
+        http_task.GetByIDTaskEntrypointHttp(),
     ],
 }

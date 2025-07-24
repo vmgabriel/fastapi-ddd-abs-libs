@@ -120,6 +120,7 @@ class PostgresHistoryTaskRepository(
         return cast(List[entity_domain.TaskHistory], response_filter.elements)
 
     def serialize(self, data: Any) -> entity_domain.TaskHistory | None:
+        print(f"data - {data}")
         if not data:
             return None
         return entity_domain.TaskHistory(
@@ -129,8 +130,8 @@ class PostgresHistoryTaskRepository(
             type_of_change=data[3],
             previous_values=data[4],
             new_values=data[5],
-            created_at=data[6],
-            updated_at=data[7],
-            deleted_at=data[8],
-            is_activated=data[9],
+            is_activated=data[6],
+            created_at=data[7],
+            updated_at=data[8],
+            deleted_at=data[9],
         )

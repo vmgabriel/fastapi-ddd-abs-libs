@@ -77,6 +77,57 @@ def paginate_task_of_board(
     )
 
 
+def get_detailed_task_by_id(
+    id: str,
+    repository_task: domain_repository.TaskRepository,
+    repository_task_history: domain_repository.TaskHistoryRepository,
+    filter_builder: filter_domain.FilterBuilder,
+) -> entity_domain.Task | None:
+    eq_filter = filter_builder.build(type_filter=filter_domain.FilterType.EQUAL)
+    order_by_id = filter_builder.build_order(type_order=filter_domain.OrderType.ASC)(
+        "id"
+    )
+
+    user_id_eq_filter = eq_filter("id")(id)
+    is_activated_eq_filter = eq_filter("is_activated")(True)
+
+    criteria_task = filter_domain.Criteria(
+        filters=[user_id_eq_filter, is_activated_eq_filter],
+        order_by=[order_by_id],
+        page_quantity=30,
+        page_number=1,
+    )
+
+    for filter in cast(List[filter_domain.Filter], criteria_task.filters):
+        filter.update_table("tbl_task")
+
+    join_with_user = filter_domain.Join(
+        table="tbl_user",
+        on="tbl_task.user_id = tbl_user.id",
+        join_type=filter_domain.JoinType.INNER,
+    )
+    join_user_with_profile = filter_domain.Join(
+        table="tbl_profile",
+        on="tbl_user.id = tbl_profile.user_id",
+        join_type=filter_domain.JoinType.INNER,
+    )
+
+    task_paginator = repository_task.filter(
+        criteria=criteria_task, joins=[join_with_user, join_user_with_profile]
+    )
+
+    if task_paginator.total == 0:
+        raise ValueError("Task not found")
+
+    task = task_paginator.elements[0]
+    histories = get_histories_by_task_id(
+        task_id=id, repository_task_history=repository_task_history
+    )
+    for history in histories:
+        task.inject_history(history=history)
+    return cast(entity_domain.Task | None, task)
+
+
 class UpdateTaskCommandRequest(command.CommandRequest):
     name: str
     description: str

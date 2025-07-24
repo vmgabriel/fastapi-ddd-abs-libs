@@ -758,8 +758,44 @@ class CreateTaskEntrypointDocumentationHttp(
             description="V1 - Create Task",
             example_name="Create Task",
             content={
-                "trace_id": "025712b3-4be6-4999-b3ec-d1b58440d47f",
-                "payload": {"message": "ok"},
+                "trace_id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+                "payload": {
+                    "id": "1fa85f64-5717-4562-b3fc-2c963f66afa6",
+                    "deleted_at": None,
+                    "created_at": "2025-07-23T19:08:21.163963",
+                    "updated_at": "2025-07-23T19:08:21.163970",
+                    "is_activated": True,
+                    "name": "Context",
+                    "board_id": "board_id",
+                    "description": "Context",
+                    "owner": "user_id",
+                    "priority": "high",
+                    "histories": [
+                        {
+                            "id": "21bba247-6592-413e-972b-c90e6a46c8fa",
+                            "deleted_at": None,
+                            "created_at": "2025-07-23T19:08:21.163963",
+                            "updated_at": "2025-07-23T19:08:21.163970",
+                            "is_activated": True,
+                            "task_id": "1fa85f64-5717-4562-b3fc-2c963f66afa6",
+                            "changed_at": "2025-07-23T19:08:26.248665",
+                            "type_of_change": "inserted",
+                            "previous_values": None,
+                            "new_values": {
+                                "id": "1fa85f64-5717-4562-b3fc-2c963f66afa6",
+                                "name": "Context",
+                                "description": "Context",
+                                "icon_url": "https://google.com/images/1.jpg",
+                                "user_id": "user_id",
+                                "priority": "high",
+                                "board_id": "board_id",
+                            },
+                        }
+                    ],
+                    "status": "todo",
+                    "icon_url": "https://google.com/images/1.jpg",
+                    "owner_data": None,
+                },
                 "errors": [],
             },
         )
@@ -793,5 +829,97 @@ class CreateTaskEntrypointHttp(entrypoint_http.EntrypointHttp):
                 audiences=["task:create"],
             ),
             cmd=task_commands.CreateTaskCommand(),
+            path_parameters=["version", "id", "user"],
+        )
+
+
+# Get By ID - Task Detailed
+
+
+class GetByIdTaskEntrypointDocumentationHttp(
+    entrypoint_http.ExampleEntrypointDocumentationHttp
+):
+    def __init__(self):
+        super().__init__(
+            status_code=200,
+            description="V1 - Get By ID Task",
+            example_name="Get By ID Task",
+            content={
+                "trace_id": "57c8d321-2dfd-4459-a37e-4ef60da91955",
+                "payload": {
+                    "id": "1fa85f64-5717-4562-b3fc-2c963f66afa6",
+                    "deleted_at": None,
+                    "created_at": "2025-07-23T19:08:21.163963",
+                    "updated_at": "2025-07-23T19:08:21.163970",
+                    "is_activated": True,
+                    "name": "A New Task in Swagger",
+                    "board_id": "3fa85f64-5717-4562-b3fc-2c963f66afa3",
+                    "description": "This is Saved in Swagger Data",
+                    "owner": "c1f9cf0e-1d35-421c-9ba0-050c280d78b3",
+                    "priority": "high",
+                    "histories": [
+                        {
+                            "id": "21bba247-6592-413e-972b-c90e6a46c8fa",
+                            "deleted_at": None,
+                            "created_at": "2025-07-23T19:08:21.163963",
+                            "updated_at": "2025-07-23T19:08:21.163970",
+                            "is_activated": True,
+                            "task_id": "1fa85f64-5717-4562-b3fc-2c963f66afa6",
+                            "changed_at": "2025-07-23T19:08:26.248665",
+                            "type_of_change": "inserted",
+                            "previous_values": None,
+                            "new_values": {
+                                "id": "1fa85f64-5717-4562-b3fc-2c963f66afa6",
+                                "name": "A New Task in Swagger",
+                                "user_id": "c1f9cf0e-1d35-421c-9ba0-050c280d78b3",
+                                "board_id": "3fa85f64-5717-4562-b3fc-2c963f66afa3",
+                                "icon_url": "https://google.com/images/1.jpg",
+                                "priority": "high",
+                                "description": "This is Saved in Swagger Data",
+                            },
+                        }
+                    ],
+                    "status": "todo",
+                    "icon_url": "https://google.com/images/1.jpg",
+                    "owner_data": {
+                        "user_id": "c1f9cf0e-1d35-421c-9ba0-050c280d78b3",
+                        "username": "vmgabriel",
+                        "icon_id": None,
+                        "full_name": "Gabriel Vargas",
+                    },
+                },
+                "errors": [],
+            },
+        )
+
+
+class GetByIDTaskEntrypointHttpDocumentation(
+    entrypoint_http.EntrypointHttpDocumentation
+):
+    def __init__(self):
+        super().__init__(
+            summary="Get By ID Task",
+            description="Get By ID Task",
+            responses=[
+                entrypoint_http.VersionNotFoundEntrypointDocumentationHttp(),
+                GetByIdTaskEntrypointDocumentationHttp(),
+            ],
+            tags=["task"],
+        )
+
+
+class GetByIDTaskEntrypointHttp(entrypoint_http.EntrypointHttp):
+    def __init__(self):
+        super().__init__(
+            route="/{version}/tasks/{id}",
+            name="Get By ID Tasks",
+            status_code=200,
+            method=entrypoint_model.HttpStatusType.GET,
+            documentation=GetByIDTaskEntrypointHttpDocumentation(),
+            security=entrypoint_model.EntrypointSecurity(
+                require_security=True,
+                audiences=["task:get"],
+            ),
+            cmd=task_commands.GetByIDTaskCommand(),
             path_parameters=["version", "id", "user"],
         )
