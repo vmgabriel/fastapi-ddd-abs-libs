@@ -1036,3 +1036,128 @@ class UpdateTaskEntrypointHttp(entrypoint_http.EntrypointHttp):
             cmd=task_commands.UpdateTaskCommand(),
             path_parameters=["version", "id", "user"],
         )
+
+
+# Delete Task
+
+
+class DeleteTaskEntrypointDocumentationHttp(
+    entrypoint_http.ExampleEntrypointDocumentationHttp
+):
+    def __init__(self):
+        super().__init__(
+            status_code=200,
+            description="V1 - Delete Task",
+            example_name="Delete Task",
+            content={
+                "trace_id": "57c8d321-2dfd-4459-a37e-4ef60da91955",
+                "payload": {
+                    "trace_id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+                    "payload": {
+                        "id": "1fa85f64-5717-4562-b3fc-2c963f66afa6",
+                        "deleted_at": None,
+                        "created_at": "2025-07-23T19:08:21.163963",
+                        "updated_at": "2025-07-24T09:32:33.915171",
+                        "is_activated": True,
+                        "name": "Updated with data",
+                        "board_id": "3fa85f64-5717-4562-b3fc-2c963f66afa3",
+                        "description": "Description Updated",
+                        "owner": "c1f9cf0e-1d35-421c-9ba0-050c280d78b3",
+                        "priority": "low",
+                        "histories": [
+                            {
+                                "id": "21bba247-6592-413e-972b-c90e6a46c8fa",
+                                "deleted_at": None,
+                                "created_at": "2025-07-23T19:08:21.163963",
+                                "updated_at": "2025-07-23T19:08:21.163970",
+                                "is_activated": True,
+                                "task_id": "1fa85f64-5717-4562-b3fc-2c963f66afa6",
+                                "changed_at": "2025-07-23T19:08:26.248665",
+                                "type_of_change": "inserted",
+                                "previous_values": None,
+                                "new_values": {
+                                    "id": "1fa85f64-5717-4562-b3fc-2c963f66afa6",
+                                    "name": "A New Task in Swagger",
+                                    "user_id": "c1f9cf0e-1d35-421c-9ba0-050c280d78b3",
+                                    "board_id": "3fa85f64-5717-4562-b3fc-2c963f66afa3",
+                                    "icon_url": "https://google.com/images/1.jpg",
+                                    "priority": "high",
+                                    "description": "This is Saved in Swagger Data",
+                                },
+                            },
+                            {
+                                "id": "7b3f432b-0b94-475f-9f2c-105477d5673f",
+                                "deleted_at": None,
+                                "created_at": "2025-07-24T09:32:31.414625",
+                                "updated_at": "2025-07-24T09:32:31.414630",
+                                "is_activated": True,
+                                "task_id": "1fa85f64-5717-4562-b3fc-2c963f66afa6",
+                                "changed_at": "2025-07-24T09:32:33.914957",
+                                "type_of_change": "updated",
+                                "previous_values": {
+                                    "name": "A New Task in Swagger",
+                                    "icon_url": "https://google.com/images/1.jpg",
+                                    "priority": "high",
+                                    "description": "This is Saved in Swagger Data",
+                                },
+                                "new_values": {
+                                    "name": "Updated with data",
+                                    "icon_url": "https://duckduckgo.com/images/1.jpg",
+                                    "priority": "low",
+                                    "description": "Description Updated",
+                                },
+                            },
+                            {
+                                "id": "b1b2fbab-7e88-461e-8dd1-350d751ecc99",
+                                "deleted_at": None,
+                                "created_at": "2025-07-24T10:38:08.305187",
+                                "updated_at": "2025-07-24T10:38:08.305193",
+                                "is_activated": True,
+                                "task_id": "1fa85f64-5717-4562-b3fc-2c963f66afa6",
+                                "changed_at": "2025-07-24T10:38:09.870597",
+                                "type_of_change": "deleted",
+                                "previous_values": None,
+                                "new_values": {},
+                            },
+                        ],
+                        "status": "todo",
+                        "icon_url": "https://duckduckgo.com/images/1.jpg",
+                        "owner_data": {},
+                    },
+                    "errors": [],
+                },
+                "errors": [],
+            },
+        )
+
+
+class DeleteTaskEntrypointHttpDocumentation(
+    entrypoint_http.EntrypointHttpDocumentation
+):
+    def __init__(self):
+        super().__init__(
+            summary="Delete Task",
+            description="Delete Task",
+            responses=[
+                entrypoint_http.VersionNotFoundEntrypointDocumentationHttp(),
+                DeleteTaskEntrypointDocumentationHttp(),
+            ],
+            tags=["task"],
+        )
+
+
+class DeleteTaskEntrypointHttp(entrypoint_http.EntrypointHttp):
+    def __init__(self):
+        super().__init__(
+            route="/{version}/tasks/{id}",
+            name="Delete Tasks",
+            status_code=200,
+            method=entrypoint_model.HttpStatusType.DELETE,
+            documentation=DeleteTaskEntrypointHttpDocumentation(),
+            security=entrypoint_model.EntrypointSecurity(
+                require_security=True,
+                audiences=["task:delete"],
+            ),
+            cmd=task_commands.DeleteTaskCommand(),
+            path_parameters=["version", "id", "user"],
+        )

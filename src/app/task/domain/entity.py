@@ -180,6 +180,17 @@ class Task(domain_repository.RepositoryData):
         )
         self.owner = owner
 
+    def delete(self) -> None:
+        self.histories.append(
+            TaskHistory(
+                id=str(uuid.uuid4()),
+                task_id=self.id,
+                type_of_change=domain_entity.HistoryChangeType.DELETED,
+                new_values={},
+                changed_at=datetime.datetime.now(),
+            )
+        )
+
 
 class BoardMember(pydantic.BaseModel):
     user_id: str
@@ -267,6 +278,10 @@ class Board(domain_repository.RepositoryData):
 
     def update_task(self, task: Task, member_that_update: str) -> None:
         if not self.is_editor(member_that_update):
+            raise IsNotEditorOfBoardError("Only Editor can add task")
+
+    def delete_task(self, task: Task, member_that_delete: str) -> None:
+        if not self.is_editor(member_that_delete):
             raise IsNotEditorOfBoardError("Only Editor can add task")
 
     def inject_member(self, member: BoardMember) -> None:

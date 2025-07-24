@@ -1,10 +1,18 @@
-from unittest.mock import MagicMock, PropertyMock
+from unittest.mock import MagicMock, Mock, PropertyMock
 
 import pytest
 
 from src.app.task.domain import entity as entity_domain
 from src.app.task.domain import repository as repository_domain
+from src.app.task.domain.entity import Board, Task
+from src.app.task.domain.repository import (
+    BoardRepository,
+    OwnerShipBoardRepository,
+    TaskHistoryRepository,
+    TaskRepository,
+)
 from src.app.task.services import task as task_service
+from src.app.task.services.task import delete_task
 from src.domain.models.filter import FilterBuilder, Paginator
 from src.domain.services.command import CommandQueryRequest
 from src.infra.log.model import LogAdapter
@@ -284,3 +292,107 @@ def test_update_task_raises_board_not_found():
             repository_board=mock_board_repo,
             repository_ownership=mock_ownership_repo,
         )
+
+
+def test_delete_task_success():
+    # Arrange
+    mock_logger = Mock(spec=LogAdapter)
+    mock_repository_task = Mock(spec=TaskRepository)
+    mock_repository_task_history = Mock(spec=TaskHistoryRepository)
+    mock_repository_board = Mock(spec=BoardRepository)
+    mock_repository_ownership = Mock(spec=OwnerShipBoardRepository)
+
+    task_id = "test_task_id"
+    user_id = "test_user_id"
+
+    mock_task = Mock(spec=Task)
+    mock_task.board_id = "test_board_id"
+    mock_task.histories = []
+    type(mock_task).histories = PropertyMock(return_value=[Mock()])
+
+    mock_board = Mock(spec=Board)
+    mock_board.owners = []
+    mock_board.members = []
+    mock_board.is_member = Mock(return_value=True)
+    mock_board.delete_task = Mock()
+
+    mock_repository_task.get_by_id.return_value = mock_task
+    mock_repository_board.get_by_id.return_value = mock_board
+    mock_repository_ownership.get_by_board_id.return_value = []
+    mock_repository_task_history.get_by_task_id.return_value = []
+
+    # Act
+    result = delete_task(
+        id=task_id,
+        user_id=user_id,
+        logger=mock_logger,
+        repository_task=mock_repository_task,
+        repository_task_history=mock_repository_task_history,
+        repository_board=mock_repository_board,
+        repository_ownership=mock_repository_ownership,
+    )
+
+    # Assert
+    assert result == mock_task
+    mock_logger.info.assert_called_with("Deleting Task")
+    mock_task.delete.assert_called_once()
+    mock_board.delete_task.assert_called_once_with(
+        task=mock_task, member_that_delete=user_id
+    )
+    mock_repository_task.delete.assert_called_once_with(id=task_id)
+    mock_repository_task_history.create.assert_called_once()
+
+
+def test_delete_task_not_found():
+    mock_logger = Mock(spec=LogAdapter)
+    mock_repository_task = Mock(spec=TaskRepository)
+    mock_repository_task_history = Mock(spec=TaskHistoryRepository)
+    mock_repository_board = Mock(spec=BoardRepository)
+    mock_repository_ownership = Mock(spec=OwnerShipBoardRepository)
+
+    task_id = "non_existent_task_id"
+    user_id = "test_user_id"
+
+    mock_repository_task.get_by_id.return_value = None
+
+    with pytest.raises(ValueError, match="Task not found"):
+        delete_task(
+            id=task_id,
+            user_id=user_id,
+            logger=mock_logger,
+            repository_task=mock_repository_task,
+            repository_task_history=mock_repository_task_history,
+            repository_board=mock_repository_board,
+            repository_ownership=mock_repository_ownership,
+        )
+
+
+def test_delete_task_board_not_found():
+    # Arrange
+    mock_logger = MagicMock(spec=LogAdapter)
+    mock_task_repo = MagicMock(spec=repository_domain.TaskRepository)
+    mock_task_history_repo = MagicMock(spec=repository_domain.TaskHistoryRepository)
+    mock_board_repo = MagicMock(spec=repository_domain.BoardRepository)
+    mock_ownership_repo = MagicMock(spec=repository_domain.OwnerShipBoardRepository)
+
+    mock_task = MagicMock(spec=entity_domain.Task)
+    mock_task.board_id = "board_1"
+    mock_task.histories = []
+
+    mock_task_repo.get_by_id.return_value = mock_task
+    mock_board_repo.get_by_id.return_value = None
+
+    # Act & Assert
+    with pytest.raises(ValueError, match="Board not found"):
+        task_service.delete_task(
+            id="task_1",
+            user_id="user_1",
+            logger=mock_logger,
+            repository_task=mock_task_repo,
+            repository_task_history=mock_task_history_repo,
+            repository_board=mock_board_repo,
+            repository_ownership=mock_ownership_repo,
+        )
+
+    mock_task_repo.get_by_id.assert_called_once_with(id="task_1")
+    mock_board_repo.get_by_id.assert_called_once_with(id="board_1")

@@ -223,3 +223,39 @@ def update_task(
     repository_task.update(id=id, to_update=entity_task_domain)
     repository_task_history.create(new=entity_task_domain.histories[-1])
     return entity_task_domain
+
+
+def delete_task(
+    id: str,
+    user_id: str,
+    logger: log_model.LogAdapter,
+    repository_task: domain_repository.TaskRepository,
+    repository_task_history: domain_repository.TaskHistoryRepository,
+    repository_board: domain_repository.BoardRepository,
+    repository_ownership: domain_repository.OwnerShipBoardRepository,
+) -> entity_domain.Task:
+    entity_task_domain = get_task_by_id(
+        repository_task=repository_task,
+        repository_task_history=repository_task_history,
+        id=id,
+    )
+
+    if not entity_task_domain:
+        raise ValueError("Task not found")
+
+    entity_board_domain = services_board.get_board_by_id(
+        id=entity_task_domain.board_id,
+        repository_board=repository_board,
+        repository_ownership=repository_ownership,
+    )
+    if not entity_board_domain:
+        raise ValueError("Board not found")
+
+    logger.info("Deleting Task")
+
+    entity_task_domain.delete()
+    entity_board_domain.delete_task(task=entity_task_domain, member_that_delete=user_id)
+
+    repository_task.delete(id=id)
+    repository_task_history.create(new=entity_task_domain.histories[-1])
+    return entity_task_domain
