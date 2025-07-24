@@ -36,7 +36,7 @@ v0.2.0
     - [X] Add priority attribute to Task
     - [X] Get List of Task for each Board
     - [X] Create Task and Save History
-    - [ ] Get By ID Task And Get TaskHistory
+    - [X] Get By ID Task And Get TaskHistory
     - [ ] Update Task and Save History
     - [ ] Delete Task and Save History
 - [ ] Global Backlog

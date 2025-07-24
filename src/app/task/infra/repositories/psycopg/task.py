@@ -120,7 +120,6 @@ class PostgresHistoryTaskRepository(
         return cast(List[entity_domain.TaskHistory], response_filter.elements)
 
     def serialize(self, data: Any) -> entity_domain.TaskHistory | None:
-        print(f"data - {data}")
         if not data:
             return None
         return entity_domain.TaskHistory(

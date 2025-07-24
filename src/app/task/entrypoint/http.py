@@ -923,3 +923,116 @@ class GetByIDTaskEntrypointHttp(entrypoint_http.EntrypointHttp):
             cmd=task_commands.GetByIDTaskCommand(),
             path_parameters=["version", "id", "user"],
         )
+
+
+# Update Task
+
+
+class UpdateTaskEntrypointDocumentationHttp(
+    entrypoint_http.ExampleEntrypointDocumentationHttp
+):
+    def __init__(self):
+        super().__init__(
+            status_code=200,
+            description="V1 - Update Task",
+            example_name="Update Task",
+            content={
+                "trace_id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+                "payload": {
+                    "trace_id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+                    "payload": {
+                        "id": "1fa85f64-5717-4562-b3fc-2c963f66afa6",
+                        "deleted_at": None,
+                        "created_at": "2025-07-23T19:08:21.163963",
+                        "updated_at": "2025-07-24T09:32:33.915171",
+                        "is_activated": True,
+                        "name": "Updated with data",
+                        "board_id": "3fa85f64-5717-4562-b3fc-2c963f66afa3",
+                        "description": "Description Updated",
+                        "owner": "c1f9cf0e-1d35-421c-9ba0-050c280d78b3",
+                        "priority": "low",
+                        "histories": [
+                            {
+                                "id": "21bba247-6592-413e-972b-c90e6a46c8fa",
+                                "deleted_at": None,
+                                "created_at": "2025-07-23T19:08:21.163963",
+                                "updated_at": "2025-07-23T19:08:21.163970",
+                                "is_activated": True,
+                                "task_id": "1fa85f64-5717-4562-b3fc-2c963f66afa6",
+                                "changed_at": "2025-07-23T19:08:26.248665",
+                                "type_of_change": "inserted",
+                                "previous_values": None,
+                                "new_values": {
+                                    "id": "1fa85f64-5717-4562-b3fc-2c963f66afa6",
+                                    "name": "A New Task in Swagger",
+                                    "user_id": "c1f9cf0e-1d35-421c-9ba0-050c280d78b3",
+                                    "board_id": "3fa85f64-5717-4562-b3fc-2c963f66afa3",
+                                    "icon_url": "https://google.com/images/1.jpg",
+                                    "priority": "high",
+                                    "description": "This is Saved in Swagger Data",
+                                },
+                            },
+                            {
+                                "id": "7b3f432b-0b94-475f-9f2c-105477d5673f",
+                                "deleted_at": None,
+                                "created_at": "2025-07-24T09:32:31.414625",
+                                "updated_at": "2025-07-24T09:32:31.414630",
+                                "is_activated": True,
+                                "task_id": "1fa85f64-5717-4562-b3fc-2c963f66afa6",
+                                "changed_at": "2025-07-24T09:32:33.914957",
+                                "type_of_change": "updated",
+                                "previous_values": {
+                                    "name": "A New Task in Swagger",
+                                    "description": "This is Saved in Swagger Data",
+                                    "icon_url": "https://google.com/images/1.jpg",
+                                    "priority": "high",
+                                },
+                                "new_values": {
+                                    "name": "Updated with data",
+                                    "description": "Description Updated",
+                                    "icon_url": "https://duckduckgo.com/images/1.jpg",
+                                    "priority": "low",
+                                },
+                            },
+                        ],
+                        "status": "todo",
+                        "icon_url": "https://duckduckgo.com/images/1.jpg",
+                        "owner_data": {},
+                    },
+                    "errors": [],
+                },
+                "errors": [],
+            },
+        )
+
+
+class UpdateTaskEntrypointHttpDocumentation(
+    entrypoint_http.EntrypointHttpDocumentation
+):
+    def __init__(self):
+        super().__init__(
+            summary="Update Task",
+            description="Update Task",
+            responses=[
+                entrypoint_http.VersionNotFoundEntrypointDocumentationHttp(),
+                UpdateTaskEntrypointDocumentationHttp(),
+            ],
+            tags=["task"],
+        )
+
+
+class UpdateTaskEntrypointHttp(entrypoint_http.EntrypointHttp):
+    def __init__(self):
+        super().__init__(
+            route="/{version}/tasks/{id}",
+            name="Update Tasks",
+            status_code=200,
+            method=entrypoint_model.HttpStatusType.PUT,
+            documentation=UpdateTaskEntrypointHttpDocumentation(),
+            security=entrypoint_model.EntrypointSecurity(
+                require_security=True,
+                audiences=["task:update"],
+            ),
+            cmd=task_commands.UpdateTaskCommand(),
+            path_parameters=["version", "id", "user"],
+        )

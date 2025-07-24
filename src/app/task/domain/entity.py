@@ -225,6 +225,12 @@ class Board(domain_repository.RepositoryData):
                 return member
         raise IsNotMemberofBoardError(f"Member {user_id} not found")
 
+    def get_task_by_id(self, task_id) -> Task:
+        for task in self.tasks:
+            if task.id == task_id:
+                return task
+        raise ValueError(f"Task {task_id} not found")
+
     def is_editor(self, user_id: str) -> bool:
         member = self.get_member_by_user_id(user_id=user_id)
         allowed_roles = [RoleMemberType.EDITOR, RoleMemberType.ADMIN]
@@ -258,6 +264,10 @@ class Board(domain_repository.RepositoryData):
         if not self.is_editor(member_that_insert):
             raise IsNotEditorOfBoardError("Only Editor can add task")
         self.tasks.append(task)
+
+    def update_task(self, task: Task, member_that_update: str) -> None:
+        if not self.is_editor(member_that_update):
+            raise IsNotEditorOfBoardError("Only Editor can add task")
 
     def inject_member(self, member: BoardMember) -> None:
         self.members.append(member)

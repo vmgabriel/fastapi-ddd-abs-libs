@@ -54,6 +54,7 @@ ROLE_PERMISSIONS: Dict[Role, List[Audience]] = {
         Audience.GET_TASKS,
         Audience.CREATE_TASK,
         Audience.GET_TASK,
+        Audience.UPDATE_TASK,
     ],
     Role.CLIENT: [
         # Current Profile
@@ -71,6 +72,7 @@ ROLE_PERMISSIONS: Dict[Role, List[Audience]] = {
         Audience.GET_TASKS,
         Audience.CREATE_TASK,
         Audience.GET_TASK,
+        Audience.UPDATE_TASK,
     ],
 }
 
