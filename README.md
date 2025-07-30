@@ -39,8 +39,9 @@ v0.2.0
     - [X] Get By ID Task And Get TaskHistory
     - [X] Update Task and Save History
     - [X] Delete Task and Save History
-    - [ ] Use of Email for Authenticate
+    - [X] Use of Email for Authenticate
     - [ ] No repeat username and Email with Create User
+    - [ ] Remove Contact Data in SQL and Configuration extend, no require all data and security layer
 - [ ] Global Backlog
     - [ ] Recovery Password
     - [ ] List of Users
@@ -52,7 +53,7 @@ v0.2.0
         - [X] Check of Validation for Board
         - [ ] Check of Validation for User
     - [ ] Logic for Integration installation and save security
-    - [ ] Use of Email for Authenticate
+    - [X] Use of Email for Authenticate
     - [ ] Notifications for User
     - [ ] Integration of Events for background themes
     - [ ] Revision for Entrypoint Healthcheck

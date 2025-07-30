@@ -13,6 +13,7 @@ from src.infra.uow.model import UOW
 
 from . import domain as domain_security
 from .services import authentication as authenticate_service
+from .services import user as user_service
 
 # Get Data
 
@@ -114,16 +115,18 @@ class CreateSuperUserCommand(command.Command):
                 ),
             )
 
-            new_repository_user = repository_user.create(
-                new=current_request.to_repository_user(
-                    [
-                        "role:admin",
-                    ]
-                )
+            new_repository_user = current_request.to_repository_user(
+                [
+                    "role:admin",
+                ]
             )
-
-            repository_profile.create(
-                new=current_request.to_repository_profile(str(new_repository_user.id))
+            user_service.create_user(
+                new_user=new_repository_user,
+                new_profile=current_request.to_repository_profile(
+                    str(new_repository_user.id)
+                ),
+                user_repository=repository_user,
+                profile_repository=repository_profile,
             )
 
             session.commit()
@@ -297,16 +300,19 @@ class CreateBasicUserCommand(command.Command):
                 ),
             )
 
-            new_repository_user = repository_user.create(
-                new=current_request.to_repository_user(
-                    [
-                        "role:client",
-                    ]
-                )
+            new_repository_user = current_request.to_repository_user(
+                [
+                    "role:client",
+                ]
             )
-
-            new_repository_profile = repository_profile.create(
-                new=current_request.to_repository_profile(str(new_repository_user.id))
+            new_repository_profile = current_request.to_repository_profile(
+                str(new_repository_user.id)
+            )
+            user_service.create_user(
+                new_user=new_repository_user,
+                new_profile=new_repository_profile,
+                user_repository=repository_user,
+                profile_repository=repository_profile,
             )
 
             session.commit()
