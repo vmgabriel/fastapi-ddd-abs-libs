@@ -37,8 +37,10 @@ v0.2.0
     - [X] Get List of Task for each Board
     - [X] Create Task and Save History
     - [X] Get By ID Task And Get TaskHistory
-    - [ ] Update Task and Save History
-    - [ ] Delete Task and Save History
+    - [X] Update Task and Save History
+    - [X] Delete Task and Save History
+    - [ ] Use of Email for Authenticate
+    - [ ] No repeat username and Email with Create User
 - [ ] Global Backlog
     - [ ] Recovery Password
     - [ ] List of Users

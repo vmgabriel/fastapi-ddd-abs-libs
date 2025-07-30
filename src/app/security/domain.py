@@ -54,3 +54,7 @@ class UserRepository(
     @abc.abstractmethod
     def by_username(self, username: str) -> UserData | None:
         raise NotImplementedError()
+
+    @abc.abstractmethod
+    def by_email(self, email: str) -> UserData | None:
+        raise NotImplementedError()

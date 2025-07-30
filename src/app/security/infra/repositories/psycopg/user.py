@@ -34,14 +34,38 @@ class PostgresUserRepository(
                 ],
             )
         )
+        self.script = "SELECT * FROM {table} WHERE {filters};"
+
         super().__init__(*args, **kwargs)
 
     def by_username(self, username: str) -> security_domain.UserData | None:
-        script = "SELECT * FROM {table} WHERE {filters};"
         _IS_USERNAME_FILTER = filter_postgres.EqualPostgresDefinitionFilter("username")
         used_filter = _IS_USERNAME_FILTER(username)
 
-        complete_script = script.format(
+        complete_script = self.script.format(
+            table=self.table_name, filters=used_filter.to_definition()
+        )
+        res = self._session.atomic_execute(
+            complete_script,
+            (
+                (cast(str, used_filter.get_values()),)
+                if isinstance(used_filter.get_values(), str)
+                else cast(Tuple[str, ...], used_filter.get_values())
+            ),
+        )
+
+        found = getattr(res, "fetchone", lambda: None)()
+
+        if not found:
+            return None
+
+        return self.serialize(found)
+
+    def by_email(self, email: str) -> security_domain.UserData | None:
+        _IS_EMAIL_FILTER = filter_postgres.EqualPostgresDefinitionFilter("email")
+        used_filter = _IS_EMAIL_FILTER(email)
+
+        complete_script = self.script.format(
             table=self.table_name, filters=used_filter.to_definition()
         )
         res = self._session.atomic_execute(

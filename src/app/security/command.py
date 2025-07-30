@@ -138,7 +138,7 @@ class CreateSuperUserCommand(command.Command):
 
 
 class AuthenticateUserCommandData(command.CommandRequest):
-    username: str
+    email: str
     password: pydantic.SecretStr
 
 
@@ -180,7 +180,7 @@ class AuthenticateCommand(command.Command):
                 jwt=self.jwt,
                 logger=self.logger,
                 user_repository=repository_user,
-                username=current_request.username,
+                email=current_request.email,
                 password=current_request.password,
             )
 

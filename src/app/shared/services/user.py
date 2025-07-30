@@ -4,6 +4,13 @@ from src.app.security import domain as domain_security
 from src.domain.models import repository as repository_model
 
 
+def find_user_by_email(
+    email: str,
+    user_repository: domain_security.UserRepository,
+) -> domain_security.UserData | None:
+    return user_repository.by_email(email=email)
+
+
 def find_user_by_username(
     username: str,
     user_repository: domain_security.UserRepository,

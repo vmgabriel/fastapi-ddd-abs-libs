@@ -28,12 +28,13 @@ def mock_logger():
 
 def test_authenticate_valid_user(mock_user_repository, mock_jwt, mock_logger):
     username = "valid_user"
+    email = "as@test.co"
     password = SecretStr("correct_password")
     expect_user_data = UserData(
         name="nn_name",
         last_name="ll_name",
         username=username,
-        email="as@test.co",
+        email=email,
         id="id",
         password=password,
         permissions=["role:admin"],
@@ -43,6 +44,7 @@ def test_authenticate_valid_user(mock_user_repository, mock_jwt, mock_logger):
     libtools.check_password = MagicMock(spec=bool)
 
     mock_user_repository.by_username.return_value = expect_user_data
+    mock_user_repository.by_email.return_value = expect_user_data
     mock_jwt.encode.return_value = MagicMock(
         type="Bearer",
         access_token="access_token",
@@ -54,7 +56,7 @@ def test_authenticate_valid_user(mock_user_repository, mock_jwt, mock_logger):
     result = authentication_service.authenticate(
         jwt=mock_jwt,
         user_repository=mock_user_repository,
-        username=username,
+        email=email,
         password=password,
         logger=mock_logger,
     )
@@ -65,33 +67,35 @@ def test_authenticate_valid_user(mock_user_repository, mock_jwt, mock_logger):
     assert result.access_token == "access_token"
 
 
-def test_authenticate_invalid_username(mock_user_repository, mock_jwt, mock_logger):
-    username = "invalid_user"
+def test_authenticate_invalid_email(mock_user_repository, mock_jwt, mock_logger):
+    email = "invalid@email.com"
     password = SecretStr("some_password")
 
     mock_user_repository.by_username.return_value = None
+    mock_user_repository.by_email.return_value = None
 
     result = authentication_service.authenticate(
         jwt=mock_jwt,
         user_repository=mock_user_repository,
-        username=username,
+        email=email,
         password=password,
         logger=mock_logger,
     )
 
     assert result.status is False
     assert result.message == "Invalid Authentication"
-    mock_logger.warning.assert_called_once_with("User invalid_user not found")
+    mock_logger.warning.assert_called_once_with("User invalid@email.com not found")
 
 
 def test_authenticate_invalid_password(mock_user_repository, mock_jwt, mock_logger):
     username = "valid_user"
+    email = "as@test.co"
     password = SecretStr("wrong_password")
     UserData(
         name="nn_name",
         last_name="ll_name",
         username=username,
-        email="as@test.co",
+        email=email,
         id="id",
         password=password,
         permissions=["role:admin"],
@@ -100,28 +104,30 @@ def test_authenticate_invalid_password(mock_user_repository, mock_jwt, mock_logg
     user_data.is_auth.return_value = False
 
     mock_user_repository.by_username.return_value = user_data
+    mock_user_repository.by_email.return_value = user_data
 
     result = authentication_service.authenticate(
         jwt=mock_jwt,
         user_repository=mock_user_repository,
-        username=username,
+        email=email,
         password=password,
         logger=mock_logger,
     )
 
     assert result.status is False
     assert result.message == "Invalid Authentication"
-    mock_logger.warning.assert_called_once_with("User valid_user not authenticated")
+    mock_logger.warning.assert_called_once_with("User as@test.co not authenticated")
 
 
 def test_authenticate_jwt_encoding_error(mock_user_repository, mock_jwt, mock_logger):
     username = "valid_user"
+    email = "as@test.co"
     password = SecretStr("correct_password")
     expect_user_data = UserData(
         name="nn_name",
         last_name="ll_name",
         username=username,
-        email="as@test.co",
+        email=email,
         id="id",
         password=password,
         permissions=["role:admin"],
@@ -130,13 +136,14 @@ def test_authenticate_jwt_encoding_error(mock_user_repository, mock_jwt, mock_lo
     user_data.is_auth.return_value = True
 
     mock_user_repository.by_username.return_value = expect_user_data
+    mock_user_repository.by_email.return_value = expect_user_data
     mock_jwt.encode.side_effect = Exception("JWT encoding error")
 
     with pytest.raises(Exception, match="JWT encoding error"):
         authentication_service.authenticate(
             jwt=mock_jwt,
             user_repository=mock_user_repository,
-            username=username,
+            email=email,
             password=password,
             logger=mock_logger,
         )
