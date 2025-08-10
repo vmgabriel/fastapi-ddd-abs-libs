@@ -40,8 +40,14 @@ v0.2.0
     - [X] Update Task and Save History
     - [X] Delete Task and Save History
     - [X] Use of Email for Authenticate
-    - [ ] No repeat username and Email with Create User
+    - [X] No repeat username and Email with Create User
+    - [X] Send Updated At to Profile Get User
+    - [ ] Paginator Not receive page - This require update request data for change of page
+    - [ ] Paginator Not send has_next - This is required for iteration general
+    - [ ] Update Profile for Add bio, and other attributes in profile of current user
     - [ ] Remove Contact Data in SQL and Configuration extend, no require all data and security layer
+    - [ ] Add attribute for color in board
+    - [ ] Add layer for Sync depends on the relation with the table and updated at rows in this table
 - [ ] Global Backlog
     - [ ] Recovery Password
     - [ ] List of Users

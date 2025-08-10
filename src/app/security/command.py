@@ -343,6 +343,7 @@ class GetProfileResponse(pydantic.BaseModel):
     email: str
     phone: str | None
     icon_url: str | None
+    updated_at: str
 
 
 class GetProfileCommand(command.Command):
@@ -410,6 +411,7 @@ class GetProfileCommand(command.Command):
                 email=user_data.email,
                 phone=profile_data.phone,
                 icon_url=profile_data.icon_url,
+                updated_at=profile_data.updated_at.isoformat(),
             )
 
         return command.CommandResponse(
