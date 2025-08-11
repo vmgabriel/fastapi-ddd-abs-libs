@@ -200,9 +200,14 @@ class ListBoardCommand(command.Command):
                 filter_builder=self.filter_builder,
             )
 
+            response_data = {
+                **entity_board.model_dump(),
+                "has_next": entity_board.has_next,
+            }
+
         return command.CommandResponse(
             trace_id=cast(command.CommandRequest, self.request).trace_id,
-            payload=getattr(entity_board, "model_dump", lambda: {})(),
+            payload=response_data,
         )
 
 
