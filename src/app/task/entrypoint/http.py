@@ -649,7 +649,7 @@ class UpdateRoleMemberBoardEntrypointHttp(entrypoint_http.EntrypointHttp):
         )
 
 
-# List Task
+# List Task By Board
 
 
 class ListTaskEntrypointDocumentationHttp(
@@ -658,8 +658,8 @@ class ListTaskEntrypointDocumentationHttp(
     def __init__(self):
         super().__init__(
             status_code=200,
-            description="V1 - List Task",
-            example_name="List Task",
+            description="V1 - List Task By Board",
+            example_name="List Task By Board",
             content={
                 "trace_id": "025712b3-4be6-4999-b3ec-d1b58440d47f",
                 "payload": {
@@ -719,8 +719,8 @@ class ListTaskEntrypointDocumentationHttp(
 class ListTaskEntrypointHttpDocumentation(entrypoint_http.EntrypointHttpDocumentation):
     def __init__(self):
         super().__init__(
-            summary="List Task",
-            description="List Task",
+            summary="List Task By Board",
+            description="List Task By Board",
             responses=[
                 entrypoint_http.VersionNotFoundEntrypointDocumentationHttp(),
                 ListTaskEntrypointDocumentationHttp(),
@@ -733,7 +733,7 @@ class ListTaskEntrypointHttp(entrypoint_http.EntrypointHttp):
     def __init__(self):
         super().__init__(
             route="/{version}/boards/{id}/tasks",
-            name="Get List Tasks",
+            name="Get List Tasks by board",
             status_code=200,
             method=entrypoint_model.HttpStatusType.GET,
             documentation=ListTaskEntrypointHttpDocumentation(),
@@ -1160,4 +1160,101 @@ class DeleteTaskEntrypointHttp(entrypoint_http.EntrypointHttp):
             ),
             cmd=task_commands.DeleteTaskCommand(),
             path_parameters=["version", "id", "user"],
+        )
+
+
+# List Tasks
+
+
+class ListTasksEntrypointDocumentationHttp(
+    entrypoint_http.ExampleEntrypointDocumentationHttp
+):
+    def __init__(self):
+        super().__init__(
+            status_code=200,
+            description="V1 - List Task",
+            example_name="List Task",
+            content={
+                "trace_id": "025712b3-4be6-4999-b3ec-d1b58440d47f",
+                "payload": {
+                    "total": 3,
+                    "page": 1,
+                    "count": 3,
+                    "elements": [
+                        {
+                            "id": "c1f9cf0f-1d35-421c-9ba0-050c280d78b3",
+                            "deleted_at": None,
+                            "created_at": "2025-07-20T18:05:48",
+                            "updated_at": "2025-07-20T18:05:45",
+                            "is_activated": True,
+                            "name": "A name for a task",
+                            "board_id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+                            "description": "A description for a task",
+                            "owner": "c1f9cf0e-1d35-421c-9ba0-050c280d78b3",
+                            "priority": "low",
+                            "histories": [],
+                            "status": "todo",
+                            "icon_url": None,
+                            "owner_data": {
+                                "user_id": "c1f9cf0e-1d35-421c-9ba0-050c280d78b3",
+                                "username": "m",
+                                "icon_id": None,
+                                "full_name": "m",
+                            },
+                        },
+                        {
+                            "id": "c2f9cf0f-1d35-421c-9ba0-050c280d78b3",
+                            "deleted_at": None,
+                            "created_at": "2025-07-20T18:05:48",
+                            "updated_at": "2025-07-20T18:05:45",
+                            "is_activated": True,
+                            "name": "A name for a task",
+                            "board_id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+                            "description": "A description for a task",
+                            "owner": "c1f9cf0e-1d35-421c-9ba0-050c280d78b3",
+                            "priority": "low",
+                            "histories": [],
+                            "status": "doing",
+                            "icon_url": None,
+                            "owner_data": {
+                                "user_id": "c1f9cf0e-1d35-421c-9ba0-050c280d78b3",
+                                "username": "m",
+                                "icon_id": None,
+                                "full_name": "m",
+                            },
+                        },
+                    ],
+                },
+                "errors": [],
+            },
+        )
+
+
+class ListTasksEntrypointHttpDocumentation(entrypoint_http.EntrypointHttpDocumentation):
+    def __init__(self):
+        super().__init__(
+            summary="List Task",
+            description="List Task",
+            responses=[
+                entrypoint_http.VersionNotFoundEntrypointDocumentationHttp(),
+                ListTasksEntrypointDocumentationHttp(),
+            ],
+            tags=["task"],
+        )
+
+
+class ListTasksEntrypointHttp(entrypoint_http.EntrypointHttp):
+    def __init__(self):
+        super().__init__(
+            route="/{version}/tasks",
+            name="Get List Tasks",
+            status_code=200,
+            method=entrypoint_model.HttpStatusType.GET,
+            documentation=ListTasksEntrypointHttpDocumentation(),
+            security=entrypoint_model.EntrypointSecurity(
+                require_security=True,
+                audiences=["task:gets_all"],
+            ),
+            cmd=task_commands.ListTasksCommand(),
+            path_parameters=["version", "query", "user"],
         )

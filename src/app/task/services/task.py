@@ -77,6 +77,45 @@ def paginate_task_of_board(
     )
 
 
+def paginate_tasks(
+    user_id: str,
+    query: command.CommandQueryRequest,
+    repository_task: domain_repository.TaskRepository,
+    filter_builder: filter_domain.FilterBuilder,
+) -> filter_domain.Paginator:
+    eq_filter = filter_builder.build(type_filter=filter_domain.FilterType.EQUAL)
+    no_eq_filter = filter_builder.build(type_filter=filter_domain.FilterType.NOT_EQUAL)
+
+    is_activated_eq_filter = eq_filter("is_activated")(True)
+    status_not_eq_filter = no_eq_filter("status")(entity_domain.TaskStatus.ABANDONED)
+
+    criteria_task = common_service.command_query_to_criteria(query, filter_builder)
+
+    criteria_task.append(is_activated_eq_filter)
+    criteria_task.append(status_not_eq_filter)
+
+    for filter in cast(List[filter_domain.Filter], criteria_task.filters):
+        filter.update_table("tbl_task")
+
+    is_user_eq_filter = eq_filter("tbl_user.id")(user_id)
+    criteria_task.append(is_user_eq_filter)
+
+    join_with_user = filter_domain.Join(
+        table="tbl_user",
+        on="tbl_task.user_id = tbl_user.id",
+        join_type=filter_domain.JoinType.INNER,
+    )
+    join_user_with_profile = filter_domain.Join(
+        table="tbl_profile",
+        on="tbl_user.id = tbl_profile.user_id",
+        join_type=filter_domain.JoinType.INNER,
+    )
+
+    return repository_task.filter(
+        criteria=criteria_task, joins=[join_with_user, join_user_with_profile]
+    )
+
+
 def get_detailed_task_by_id(
     id: str,
     repository_task: domain_repository.TaskRepository,

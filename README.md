@@ -42,7 +42,9 @@ v0.2.0
     - [X] Use of Email for Authenticate
     - [X] No repeat username and Email with Create User
     - [X] Send Updated At to Profile Get User
-    - [ ] Paginator Not send has_next - This is required for iteration general
+    - [X] Paginator Not send has_next - This is required for iteration for Board
+    - [X] Add Get Tasks List not related to Board
+    - [ ] Check of context for only data for User, related to context
     - [ ] Update Profile for Add bio, and other attributes in profile of current user
     - [ ] Remove Contact Data in SQL and Configuration extend, no require all data and security layer
     - [ ] Add attribute for color in board
